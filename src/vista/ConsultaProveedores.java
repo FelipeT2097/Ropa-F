@@ -30,6 +30,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import modelo.Usuario_Sesion;
 import reportes.VistaReportes;
 import util.Utilidad;
 
@@ -39,104 +40,103 @@ import util.Utilidad;
  */
 public class ConsultaProveedores extends javax.swing.JInternalFrame {
 
-    /**
-     * Creates new form ConsultasU
-     */
+    private ArrayList<DProveedores> proveeListCache;
+
     public ConsultaProveedores() {
-
-        super("Consultas", true, true, true, true); // Título, cerrable, redimensionable, movible, maximizable
+        super("Consultas", true, true, true, true);
         initComponents();
-        setSize(595, 460); // Establece el tamaño de la ventana
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Permite cerrar la ventana
-        setVisible(true); // Haz la ventana visible
+        setSize(595, 460);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setVisible(true);
 
-        //cargo la tabla que nos trae y nos muestra los registros de la base de datos contenidos en la trabla users
+        jTextField_ID.setEnabled(false);
+        // Cargar la lista inicialmente
         populateJtable("");
         jTable_Proveedores.setShowGrid(true);
-
         jTable_Proveedores.setGridColor(Color.YELLOW);
-
         jTable_Proveedores.setSelectionBackground(Color.gray);
 
         JTableHeader th = jTable_Proveedores.getTableHeader();
-
         th.setFont(new Font("Tahoma", Font.PLAIN, 16));
+    }
+
+    private void limpiarCampos() {
+        jTextField_ID.setText("");
+        jTextField_NOMBRE_PROVEEDOR.setText("");
+        jTextField1_numero_documento.setText("");
+        jTextField_TELEFONO.setText("");
+        jTextField2_correo.setText("");
 
     }
-    
-    private void limpiarCampos() {
-    jTextField_ID.setText("");    
-    jTextField_NOMBRE_PROVEEDOR.setText("");
-    jTextField1_numero_documento.setText("");
-    jTextField_TELEFONO.setText("");
-    jTextField2_correo.setText("");
-
-}
 
     public static ConsultaProveedores ventanaPrincipal;
     private Integer Id;
     int pos = 0;
 
-
     public void populateJtable(String prove) {
 
-        controlador.DProveedores proveedores = new controlador.DProveedores();
-        // Obtener la lista de proveedores desde la base de datos
-        ArrayList<DProveedores> proveList = getProveeList();
+        proveeListCache = getProveeList();
 
         // Definir las columnas de la tabla
         String[] colNames = {"ID", "Nombre Completo", "Tipo ID", "Documento", "Genero", "Telefono", "Correo"};
 
         // Crear una matriz para almacenar las filas de la tabla
-        Object[][] rows = new Object[proveList.size()][7];
+        Object[][] rows = new Object[proveeListCache.size()][7];
 
-        // Rellenar la matriz con los datos de la lista de usuarios
-        for (int i = 0; i < proveList.size(); i++) {
-            rows[i][0] = proveList.get(i).getId();
-            rows[i][1] = proveList.get(i).getNombreProveedor();
-            rows[i][2] = proveList.get(i).getTipoDocumento();
-            rows[i][3] = proveList.get(i).getNumeroDocumento();
-            rows[i][4] = proveList.get(i).getGenero();
-            rows[i][5] = proveList.get(i).getTelefono();
-            rows[i][6] = proveList.get(i).getCorreoElectronico();
+        // Rellenar la matriz con los datos de la lista de proveedores
+        for (int i = 0; i < proveeListCache.size(); i++) {
+            rows[i][0] = proveeListCache.get(i).getId();
+            rows[i][1] = proveeListCache.get(i).getNombreProveedor();
+            rows[i][2] = proveeListCache.get(i).getTipoDocumento();
+            rows[i][3] = proveeListCache.get(i).getNumeroDocumento();
+            rows[i][4] = proveeListCache.get(i).getGenero();
+            rows[i][5] = proveeListCache.get(i).getTelefono();
+            rows[i][6] = proveeListCache.get(i).getCorreoElectronico();
         }
 
         // Crear el modelo de la tabla con los datos y las columnas
-         DefaultTableModel model = new DefaultTableModel(rows, colNames);
+        DefaultTableModel model = new DefaultTableModel(rows, colNames);
 
         // Asignar el modelo a la JTable
         jTable_Proveedores.setModel(model);
-        jTable_Proveedores.setRowHeight(30); // Ajustar la altura de las filas
+        jTable_Proveedores.setRowHeight(30);
     }
 
     public void ShowItem(int index) {
+        // Verificar que la cache esté cargada y el índice sea válido
+        if (proveeListCache == null || proveeListCache.isEmpty()) {
+            JOptionPane.showMessageDialog(null,
+                    "La lista de proveedores está vacía.",
+                    "Advertencia",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (index < 0 || index >= proveeListCache.size()) {
+            JOptionPane.showMessageDialog(null,
+                    "Índice no válido.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Obtener el proveedor UNA sola vez
+        DProveedores proveedor = proveeListCache.get(index);
 
         // Asignar valores a los campos del formulario
-        jTextField_ID.setText(Integer.toString(getProveeList().get(index).getId()));
+        jTextField_ID.setText(Integer.toString(proveedor.getId()));
+        jTextField_NOMBRE_PROVEEDOR.setText(proveedor.getNombreProveedor());
+        jComboBox1_tipo_d.setSelectedItem(proveedor.getTipoDocumento());
+        jTextField1_numero_documento.setText(proveedor.getNumeroDocumento());
 
-        jTextField_NOMBRE_PROVEEDOR.setText(getProveeList().get(index).getNombreProveedor());
-        jComboBox1_tipo_d.setSelectedItem(getProveeList().get(index).getTipoDocumento());
-        jTextField1_numero_documento.setText(getProveeList().get(index).getNumeroDocumento());
         // Manejo del género
-        if (getProveeList().get(index).getGenero().equals("Hombre")) {
-            jRadioButton_MASCULINO.setSelected(true);
-            jRadioButton_FEMENINO.setSelected(false);
-            jRadioButton_EMPRESA.setSelected(false);
-        } else if (getProveeList().get(index).getGenero().equals("Mujer")) {
-            jRadioButton_MASCULINO.setSelected(false);
-            jRadioButton_FEMENINO.setSelected(true);
-            jRadioButton_EMPRESA.setSelected(false);
-        } else if (getProveeList().get(index).getGenero().equals("Empresa")) {
-            jRadioButton_MASCULINO.setSelected(false);
-            jRadioButton_FEMENINO.setSelected(false);
-            jRadioButton_EMPRESA.setSelected(true);
+        String genero = proveedor.getGenero();
+        jRadioButton_MASCULINO.setSelected(genero.equals("Hombre"));
+        jRadioButton_FEMENINO.setSelected(genero.equals("Mujer"));
+        jRadioButton_EMPRESA.setSelected(genero.equals("Empresa"));
 
-        } else {
-            JOptionPane.showMessageDialog(null, "Índice no válido o la lista de proveedores está vacía.");
-        }
-        jTextField_TELEFONO.setText(getProveeList().get(index).getTelefono());
-        jTextField2_correo.setText(getProveeList().get(index).getCorreoElectronico());
-
+        jTextField_TELEFONO.setText(proveedor.getTelefono());
+        jTextField2_correo.setText(proveedor.getCorreoElectronico());
     }
 
     public boolean verifyFields() {
@@ -146,13 +146,11 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
         String telefono = jTextField_TELEFONO.getText();
         String email = jTextField2_correo.getText();
 
-
         // Verificar si hay campos vacíos
-        if (name.trim().equals("") ||  doc.trim().equals("") || telefono.trim().equals("") || email.trim().equals("")) {
+        if (name.trim().equals("") || doc.trim().equals("") || telefono.trim().equals("") || email.trim().equals("")) {
             JOptionPane.showMessageDialog(null, "Uno o mas campos estan vacios", "Campos vacios", 2);
             return false;
-        } 
-        else {
+        } else {
             return true;
         }
 
@@ -497,30 +495,82 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jTable_ProveedoresMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable_ProveedoresMouseClicked
-        // TODO add your handling code here:
-        Integer rowIndex = jTable_Proveedores.getSelectedRow();
-        Id = Integer.valueOf(jTable_Proveedores.getValueAt(rowIndex, 0).toString());
-        jTextField_ID.setText(jTable_Proveedores.getValueAt(rowIndex, 0).toString());
-        jTextField_NOMBRE_PROVEEDOR.setText(jTable_Proveedores.getValueAt(rowIndex, 1).toString());
-        jComboBox1_tipo_d.setSelectedItem(jTable_Proveedores.getValueAt(rowIndex, 2).toString());
-        jTextField1_numero_documento.setText(jTable_Proveedores.getValueAt(rowIndex, 3).toString());
-        String genero = (jTable_Proveedores.getValueAt(rowIndex, 4).toString());
+    private void jButton_imprimirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_imprimirActionPerformed
 
-        if (genero.equals("Hombre")) {
-            jRadioButton_FEMENINO.setSelected(false);
-            jRadioButton_MASCULINO.setSelected(true);
-        } else if (genero.equals("Mujer")) {
-            jRadioButton_MASCULINO.setSelected(false);
-            jRadioButton_FEMENINO.setSelected(true);
-        } else if(genero.equals("Empresa")){
-            jRadioButton_MASCULINO.setSelected(false);
-            jRadioButton_FEMENINO.setSelected(false);
+        // si se oprime el botón Imprimir
+        if (jButton_imprimir.getText().equals("Imprimir")) {
+            try {
+                InputStream datosReporte = Utilidad.inputStreamReporte("Proveedores.jrxml");
+                Map<String, String> parametros = new HashMap<>();
+                parametros.put("RUsuarios", "Juan Felipe Triana ");
+
+                // Mostrar el reporte en el panel
+                Container panelReporte = VistaReportes.mostrarReporte(datosReporte, parametros);
+                panelReporte.setPreferredSize(new Dimension(600, 400));
+
+                this.jScrollPane1.getViewport().removeAll();
+                this.jScrollPane1.getViewport().add(panelReporte);
+                this.jScrollPane1.revalidate();
+                this.jScrollPane1.repaint();
+
+                this.jButton_imprimir.setText("Volver");
+                this.jButton_imprimir.setMnemonic('V');
+                this.jButton_imprimir.setIcon(new ImageIcon(this.getClass().getResource("/imagenes/atras.png")));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "No se puede mostrar los Proveedores\n" + ex.getMessage());
+            }
+        } else if (jButton_imprimir.getText().equals("Volver")) {
+            this.jScrollPane1.getViewport().removeAll();
+            this.jScrollPane1.getViewport().add(this.jTable_Proveedores);
+            this.jButton_imprimir.setText("Imprimir");
+            this.jButton_imprimir.setMnemonic('I');
+            this.jButton_imprimir.setIcon(new ImageIcon(this.getClass().getResource("/imagenes/imprimir.png")));
         }
-        jTextField_TELEFONO.setText(jTable_Proveedores.getValueAt(rowIndex, 5).toString());
-        jTextField2_correo.setText(jTable_Proveedores.getValueAt(rowIndex, 6).toString());
+    }//GEN-LAST:event_jButton_imprimirActionPerformed
 
-    }//GEN-LAST:event_jTable_ProveedoresMouseClicked
+    private void jButton_refrescarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_refrescarActionPerformed
+        // TODO add your handling code here:
+        limpiarCampos();
+        populateJtable("");
+    }//GEN-LAST:event_jButton_refrescarActionPerformed
+
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        // TODO add your handling code here:
+        if (proveeListCache != null && !proveeListCache.isEmpty()) {
+            pos = proveeListCache.size() - 1;
+            ShowItem(pos);
+        }
+    }//GEN-LAST:event_jButton5ActionPerformed
+
+    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
+        // TODO add your handling code here:
+        pos--;
+        if (pos < 0) {
+            pos = 0;
+        }
+        ShowItem(pos);
+    }//GEN-LAST:event_jButton4ActionPerformed
+
+    private void jButton_siguienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_siguienteActionPerformed
+        // TODO add your handling code here:
+        if (proveeListCache != null && !proveeListCache.isEmpty()) {
+            pos++;
+            if (pos >= proveeListCache.size()) {
+                pos = proveeListCache.size() - 1;
+            }
+            ShowItem(pos);
+        } else {
+            JOptionPane.showMessageDialog(this,
+                "La lista de proveedores está vacía o no se pudo cargar.");
+        }
+    }//GEN-LAST:event_jButton_siguienteActionPerformed
+
+    private void jButton_firstActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_firstActionPerformed
+        // TODO add your handling code here:
+        pos = 0;
+        ShowItem(pos);
+    }//GEN-LAST:event_jButton_firstActionPerformed
 
     private void jButton_eliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_eliminarActionPerformed
         // TODO add your handling code here:
@@ -540,40 +590,62 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
         }
     }//GEN-LAST:event_jButton_eliminarActionPerformed
 
-    private void jButton_firstActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_firstActionPerformed
+    private void jButton1_actualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1_actualizarActionPerformed
         // TODO add your handling code here:
-        pos = 0;
-        ShowItem(pos);
-    }//GEN-LAST:event_jButton_firstActionPerformed
+        String nombreCompleto = jTextField_NOMBRE_PROVEEDOR.getText().trim();
+        String tipoId = (String) jComboBox1_tipo_d.getSelectedItem();
+        String numeroDocumento = jTextField1_numero_documento.getText().trim();
+        String telefono = jTextField_TELEFONO.getText().trim();
+        String correoElectronico = jTextField2_correo.getText().trim();
 
-    private void jButton_siguienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_siguienteActionPerformed
-        // TODO add your handling code here:
-    if (getProveeList() != null && !getProveeList().isEmpty()) {
-        pos++;
-        if (pos >= getProveeList().size()) {
-            pos = getProveeList().size() - 1;
+        // Determinar el género seleccionado
+        String genero = "Hombre";
+        if (jRadioButton_FEMENINO.isSelected()) {
+            genero = "Mujer";
+        } else if (jRadioButton_EMPRESA.isSelected()) {
+            genero = "Empresa";
         }
 
-        ShowItem(pos);
-    } else {
-        JOptionPane.showMessageDialog(this, "La lista de proveedores está vacía o no se pudo cargar.");
-    }
-    }//GEN-LAST:event_jButton_siguienteActionPerformed
+        // Verificar que todos los campos son válidos
+        if (verifyFields()) {
+            try {
+                // Obtener el ID del proveedor seleccionado en la tabla
+                int selectedRow = jTable_Proveedores.getSelectedRow();
+                if (selectedRow == -1) {
+                    JOptionPane.showMessageDialog(null,
+                        "Seleccione un proveedor para actualizar.",
+                        "Error",
+                        JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                int idProveedor = (int) jTable_Proveedores.getValueAt(selectedRow, 0);
 
-    private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
-        // TODO add your handling code here:
-        pos--;
-        if (pos < 0) {
-            pos = 0;
+                // Crear el objeto proveedores con los datos del formulario
+                controlador.DProveedores proveedores = new DProveedores(
+                    idProveedor, nombreCompleto, tipoId, numeroDocumento,
+                    genero, telefono, correoElectronico
+                );
+
+                // Actualizar el proveedor
+                controlador.DProveedores.actualizarProveedores(proveedores);
+
+                // Recargar la tabla después de actualizar
+                populateJtable("");
+
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(null,
+                    "Error al actualizar el proveedor: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+        } else {
+            JOptionPane.showMessageDialog(null,
+                "Por favor, complete todos los campos obligatorios.",
+                "Campos Inválidos",
+                JOptionPane.WARNING_MESSAGE);
         }
-        ShowItem(pos);
-    }//GEN-LAST:event_jButton4ActionPerformed
-
-    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
-        // TODO add your handling code here:
-        pos = getProveeList().size() - 1;
-        ShowItem(pos);
-    }//GEN-LAST:event_jButton5ActionPerformed
+    }//GEN-LAST:event_jButton1_actualizarActionPerformed
 
     private void jButton_insertarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_insertarActionPerformed
         // TODO add your handling code here:
@@ -598,126 +670,68 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
         proveedores.setCorreoElectronico(jTextField2_correo.getText());
 
         // Llamar al método para insertar el usuario
-        insertarProveedores(proveedores);
+        controlador.DProveedores.insertarProveedores(proveedores);
     }//GEN-LAST:event_jButton_insertarActionPerformed
 
-    private void jButton1_actualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1_actualizarActionPerformed
+    private void jTable_ProveedoresMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable_ProveedoresMouseClicked
         // TODO add your handling code here:
-        
-     String nombreCompleto = jTextField_NOMBRE_PROVEEDOR.getText().trim();
-    String tipoId = (String) jComboBox1_tipo_d.getSelectedItem();
-    String numeroDocumento = jTextField1_numero_documento.getText().trim();
-    String telefono = jTextField_TELEFONO.getText().trim();
-    String correoElectronico = jTextField2_correo.getText().trim();
+        Integer rowIndex = jTable_Proveedores.getSelectedRow();
+        Id = Integer.valueOf(jTable_Proveedores.getValueAt(rowIndex, 0).toString());
+        jTextField_ID.setText(jTable_Proveedores.getValueAt(rowIndex, 0).toString());
+        jTextField_NOMBRE_PROVEEDOR.setText(jTable_Proveedores.getValueAt(rowIndex, 1).toString());
+        jComboBox1_tipo_d.setSelectedItem(jTable_Proveedores.getValueAt(rowIndex, 2).toString());
+        jTextField1_numero_documento.setText(jTable_Proveedores.getValueAt(rowIndex, 3).toString());
+        String genero = (jTable_Proveedores.getValueAt(rowIndex, 4).toString());
 
-    // Determinar el género seleccionado
-    String genero = "Hombre"; 
-    if (jRadioButton_FEMENINO.isSelected()) {
-        genero = "Mujer";
-    } else if (jRadioButton_EMPRESA.isSelected()) {
-        genero = "Empresa";
-    }
-
-    // Verificar que todos los campos son válidos
-    if (verifyFields()) {
-        try {
-            // Obtener el ID del proveedor seleccionado en la tabla
-            int selectedRow = jTable_Proveedores.getSelectedRow();
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(null, "Seleccione un proveedor para actualizar.", "Error", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            int idProveedor = (int) jTable_Proveedores.getValueAt(selectedRow, 0); // Supongamos que el ID está en la columna 0
-
-            // Crear el objeto proveedores con el ID correcto y los datos del formulario
-            controlador.DProveedores proveedores = new DProveedores(idProveedor, nombreCompleto, tipoId, numeroDocumento, genero, telefono, correoElectronico);
-
-            // Intentar actualizar el proveedor
-            controlador.DProveedores.actualizarProveedores(proveedores);
-            populateJtable("");
-
-            
-        } catch (Exception e) {
-            // Manejo de excepciones
-            JOptionPane.showMessageDialog(null, "Error al actualizar el proveedor: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace(); // Imprimir el stack trace para depuración
+        if (genero.equals("Hombre")) {
+            jRadioButton_FEMENINO.setSelected(false);
+            jRadioButton_MASCULINO.setSelected(true);
+        } else if (genero.equals("Mujer")) {
+            jRadioButton_MASCULINO.setSelected(false);
+            jRadioButton_FEMENINO.setSelected(true);
+        } else if (genero.equals("Empresa")) {
+            jRadioButton_MASCULINO.setSelected(false);
+            jRadioButton_FEMENINO.setSelected(false);
         }
-    } else {
-        // Mensaje si los campos no son válidos
-        JOptionPane.showMessageDialog(null, "Por favor, complete todos los campos obligatorios.", "Campos Inválidos", JOptionPane.WARNING_MESSAGE);
-    } 
-    }//GEN-LAST:event_jButton1_actualizarActionPerformed
+        jTextField_TELEFONO.setText(jTable_Proveedores.getValueAt(rowIndex, 5).toString());
+        jTextField2_correo.setText(jTable_Proveedores.getValueAt(rowIndex, 6).toString());
+    }//GEN-LAST:event_jTable_ProveedoresMouseClicked
 
     private void jRadioButton_MASCULINOActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton_MASCULINOActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jRadioButton_MASCULINOActionPerformed
 
-    private void jButton_refrescarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_refrescarActionPerformed
-        // TODO add your handling code here:
-        limpiarCampos();
-        populateJtable("");
-    }//GEN-LAST:event_jButton_refrescarActionPerformed
-
-    private void jButton_imprimirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_imprimirActionPerformed
-        // TODO add your handling code here:
-        // si se oprime el botón Imprimir
-        if (jButton_imprimir.getText().equals("Imprimir")) {
-            try {
-                InputStream datosReporte = Utilidad.inputStreamReporte("Proveedores.jrxml");
-                Map<String, String> parametros = new HashMap<>();
-                parametros.put("RUsuarios", "Juan Felipe Triana ");
-
-                // Mostrar el reporte en el panel
-                Container panelReporte = VistaReportes.mostrarReporte(datosReporte, parametros);
-                panelReporte.setPreferredSize(new Dimension(600, 400)); // Ajusta el tamaño según sea necesario
-
-                this.jScrollPane1.getViewport().removeAll();
-                this.jScrollPane1.getViewport().add(panelReporte);
-                this.jScrollPane1.revalidate(); // Vuelve a validar el jScrollPane
-                this.jScrollPane1.repaint(); // Redibuja el jScrollPane
-
-                // Cambiar el texto del botón a "Volver"
-                this.jButton_imprimir.setText("Volver");
-                this.jButton_imprimir.setMnemonic('V');
-                this.jButton_imprimir.setIcon(new ImageIcon(this.getClass().getResource("/imagenes/atras.png")));
-            } catch (Exception ex) {
-                ex.printStackTrace(); // Imprime la traza de la excepción
-                JOptionPane.showMessageDialog(this, "No se puede mostrar los Contactos de la Agenda\n" + ex.getMessage());
-            }
-        } else if (jButton_imprimir.getText().equals("Volver")) {
-            this.jScrollPane1.getViewport().removeAll();
-            this.jScrollPane1.getViewport().add(this.jTable_Proveedores);
-            this.jButton_imprimir.setText("Imprimir");
-            this.jButton_imprimir.setMnemonic('V');
-        }
-    }//GEN-LAST:event_jButton_imprimirActionPerformed
-
-    public ArrayList<DProveedores> getProveeList() {
-        ArrayList<DProveedores> proveeList = new ArrayList<DProveedores>();
-        //  Connection con = getConnection();
-        Connection con = modelo.Conexion_DB.getConnection();
+    public ArrayList<DProveedores> idveeList() {
+        ArrayList<DProveedores> proveeList = new ArrayList<>();
         String query = "SELECT * FROM proveedores";
 
-        Statement st;
-        ResultSet rs;
+        try (Connection con = modelo.Conexion_DB.getConnection();
+                Statement st = con.createStatement();
+                ResultSet rs = st.executeQuery(query)) {
 
-        try {
-
-            st = con.createStatement();
-            rs = st.executeQuery(query);
-            DProveedores proveedores;
-
-            while (rs.next()) { //cargo cada registro llamándolo desde la tabla con sus respectivos nombres de campos
-                proveedores = new DProveedores(rs.getInt("id"), rs.getString("nombre_proveedor"), rs.getString("tipo_documento"), rs.getString("numero_documento"), rs.getString("genero"), rs.getString("telefono"), rs.getString("Correo_electronico"));
+            while (rs.next()) {
+                DProveedores proveedores = new DProveedores(
+                        rs.getInt("id"),
+                        rs.getString("nombre_proveedor"),
+                        rs.getString("tipo_documento"),
+                        rs.getString("numero_documento"),
+                        rs.getString("genero"),
+                        rs.getString("telefono"),
+                        rs.getString("correo_electronico")
+                );
                 proveeList.add(proveedores);
             }
 
         } catch (SQLException ex) {
-            Logger.getLogger(ConsultaProveedores.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(null,
+                    "Error al cargar proveedores:\n" + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ConsultaProveedores.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
 
         return proveeList;
-
     }
 
     /**
@@ -788,5 +802,9 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
     private javax.swing.JTextField jTextField_NOMBRE_PROVEEDOR;
     private javax.swing.JTextField jTextField_TELEFONO;
     // End of variables declaration//GEN-END:variables
+
+    private ArrayList<DProveedores> getProveeList() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 
 }

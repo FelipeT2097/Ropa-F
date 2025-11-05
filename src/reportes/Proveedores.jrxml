@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RRProveedores" language="groovy" pageWidth="802" pageHeight="555" orientation="Landscape" columnWidth="802" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" >
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="RRProveedores" language="groovy" pageWidth="802" pageHeight="555" orientation="Landscape" columnWidth="802" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="5efb797c-726d-42c5-bd8a-8b07b897d696">
 	<property name="ireport.zoom" value="1.0"/>
 	<property name="ireport.x" value="0"/>
 	<property name="ireport.y" value="0"/>
@@ -13,8 +13,8 @@
 			<style mode="Opaque" backcolor="#F0EFEF"/>
 		</conditionalStyle>
 	</style>
-	<parameter name="P_PROVEEDORES" class="java.lang.String"/>
-	<queryString language="SQL">
+	<parameter name="P_Proveedores" class="java.lang.String"/>
+	<queryString>
 		<![CDATA[select * from inventario_ropa_f.proveedores]]>
 	</queryString>
 	<field name="id" class="java.lang.Integer">
@@ -44,9 +44,9 @@
 	<title>
 		<band height="102" splitType="Stretch">
 			<frame>
-				<reportElement mode="Opaque" x="0" y="0" width="721" height="66" backcolor="#000000"/>
+				<reportElement mode="Opaque" x="0" y="0" width="802" height="66" backcolor="#000000" uuid="4b414226-9437-4ef3-bcf0-551c69a9b163"/>
 				<staticText>
-					<reportElement style="Title" x="0" y="0" width="370" height="66" />
+					<reportElement style="Title" x="0" y="0" width="370" height="66" uuid="6a361ee1-6bb1-43ab-afc7-af40e5173b33"/>
 					<box topPadding="4" leftPadding="4" bottomPadding="4" rightPadding="4"/>
 					<textElement verticalAlignment="Bottom">
 						<font isBold="false"/>
@@ -54,7 +54,7 @@
 					<text><![CDATA[Proveedores]]></text>
 				</staticText>
 				<staticText>
-					<reportElement style="SubTitle" x="370" y="37" width="316" height="29"/>
+					<reportElement style="SubTitle" x="370" y="37" width="316" height="29" uuid="f16514fd-10f3-4672-a341-666f75ebad2b"/>
 					<textElement textAlignment="Right">
 						<font size="22" isBold="false"/>
 					</textElement>
@@ -62,25 +62,21 @@
 				</staticText>
 			</frame>
 			<frame>
-				<reportElement mode="Opaque" x="0" y="70" width="721" height="32" forecolor="#000000" backcolor="#CC0000" />
+				<reportElement mode="Opaque" x="0" y="70" width="802" height="32" forecolor="#000000" backcolor="#CC0000" uuid="b6b881f2-1dc4-4b83-8393-e0e96a0836a9"/>
 				<textField pattern="EEEEE dd MMMMM yyyy">
-					<reportElement x="553" y="12" width="144" height="20" forecolor="#FFFFFF" />
+					<reportElement x="658" y="12" width="144" height="20" forecolor="#FFFFFF" uuid="a838439d-78c2-43b6-bb57-97b3f7fd5f0a"/>
 					<textElement textAlignment="Right">
 						<font size="12"/>
 					</textElement>
 					<textFieldExpression><![CDATA[new java.util.Date()]]></textFieldExpression>
 				</textField>
-				<textField>
-					<reportElement x="126" y="12" width="100" height="20" />
-					<textFieldExpression><![CDATA[$P{P_PROVEEDORES}]]></textFieldExpression>
-				</textField>
 				<staticText>
-					<reportElement x="41" y="12" width="100" height="20" />
+					<reportElement x="26" y="12" width="100" height="20" uuid="70cd94a5-09ba-4b70-a293-102c5d0f767a"/>
 					<text><![CDATA[Generado por:]]></text>
 				</staticText>
 			</frame>
 			<image>
-				<reportElement x="721" y="0" width="81" height="102" />
+				<reportElement x="732" y="0" width="84" height="66" uuid="d494b57f-ebb9-4fc3-a2f2-6c84905d31ce"/>
 				<imageExpression><![CDATA["C:\\Users\\piper\\Documents\\NetBeansProjects\\JAVA\\ropF\\src\\imagenes\\logo7.PNG"]]></imageExpression>
 			</image>
 		</band>
@@ -91,49 +87,49 @@
 	<columnHeader>
 		<band height="23" splitType="Stretch">
 			<staticText>
-				<reportElement style="Column header" x="0" y="0" width="113" height="18" forecolor="#000000" />
+				<reportElement style="Column header" x="0" y="0" width="113" height="18" forecolor="#000000" uuid="f46076f8-d725-4769-9230-d45c749a093f"/>
 				<textElement textAlignment="Center">
 					<font isBold="false"/>
 				</textElement>
 				<text><![CDATA[ID]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Column header" x="113" y="0" width="113" height="18" forecolor="#000000" />
+				<reportElement style="Column header" x="113" y="0" width="113" height="18" forecolor="#000000" uuid="a24421dd-5399-4861-a4a5-147082d3ca1a"/>
 				<textElement textAlignment="Center">
 					<font isBold="false"/>
 				</textElement>
 				<text><![CDATA[Nombre Proveedor]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Column header" x="226" y="0" width="113" height="18" forecolor="#000000" />
+				<reportElement style="Column header" x="226" y="0" width="113" height="18" forecolor="#000000" uuid="8eb479c5-2b33-4d5b-af4a-044f35fd5858"/>
 				<textElement textAlignment="Center">
 					<font isBold="false"/>
 				</textElement>
 				<text><![CDATA[Tipo Documento]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Column header" x="339" y="0" width="126" height="18" forecolor="#000000" />
+				<reportElement style="Column header" x="339" y="0" width="126" height="18" forecolor="#000000" uuid="bd22adc9-2bc8-4fd3-b22d-286bdc4834ce"/>
 				<textElement textAlignment="Center">
 					<font isBold="false"/>
 				</textElement>
 				<text><![CDATA[Numero Documento]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Column header" x="465" y="0" width="100" height="18" forecolor="#000000"/>
+				<reportElement style="Column header" x="465" y="0" width="100" height="18" forecolor="#000000" uuid="e1d01c4c-b124-4d9f-a8c8-b1fc70909bd9"/>
 				<textElement textAlignment="Center">
 					<font isBold="false"/>
 				</textElement>
 				<text><![CDATA[Genero]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Column header" x="565" y="0" width="113" height="18" forecolor="#000000"/>
+				<reportElement style="Column header" x="565" y="0" width="113" height="18" forecolor="#000000" uuid="1f3312e0-f709-4c96-ad80-0b0b5169346a"/>
 				<textElement textAlignment="Center">
 					<font isBold="false"/>
 				</textElement>
 				<text><![CDATA[Telefono]]></text>
 			</staticText>
 			<staticText>
-				<reportElement style="Column header" x="678" y="0" width="113" height="18" forecolor="#000000" />
+				<reportElement style="Column header" x="678" y="0" width="113" height="18" forecolor="#000000" uuid="76ca5c51-ff5d-4f5c-b80b-a4ccb36cd84e"/>
 				<textElement>
 					<font isBold="false"/>
 				</textElement>
@@ -144,51 +140,51 @@
 	<detail>
 		<band height="18" splitType="Stretch">
 			<frame>
-				<reportElement style="Row" mode="Opaque" x="0" y="0" width="797" height="18" />
+				<reportElement style="Row" mode="Opaque" x="0" y="0" width="797" height="18" uuid="a79cb2c6-c3f9-445a-bb6b-53e9e744142c"/>
 				<textField isStretchWithOverflow="true">
-					<reportElement style="Detail" positionType="Float" x="0" y="0" width="113" height="18" />
+					<reportElement style="Detail" positionType="Float" x="0" y="0" width="113" height="18" uuid="8e91705a-6eb8-4962-b6fd-a5d073511c89"/>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font size="14"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{id}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement style="Detail" positionType="Float" x="113" y="0" width="113" height="18"/>
+					<reportElement style="Detail" positionType="Float" x="113" y="0" width="113" height="18" uuid="0d41cfe1-94f0-41f2-a33b-95a8d8435421"/>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font size="14"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{nombre_proveedor}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement style="Detail" positionType="Float" x="226" y="0" width="113" height="18" />
+					<reportElement style="Detail" positionType="Float" x="226" y="0" width="113" height="18" uuid="7418912b-b2d3-4e7a-b1fc-7516f30a5f61"/>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font size="14"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{tipo_documento}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement style="Detail" positionType="Float" x="339" y="0" width="126" height="18"/>
+					<reportElement style="Detail" positionType="Float" x="339" y="0" width="126" height="18" uuid="dbf82571-08af-41ff-a081-be24204a5a89"/>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font size="14"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{numero_documento}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement style="Detail" positionType="Float" x="465" y="0" width="100" height="18" />
+					<reportElement style="Detail" positionType="Float" x="465" y="0" width="100" height="18" uuid="833c1cba-a232-42f7-854e-3bf4aab75e66"/>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font size="14"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{genero}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement style="Detail" positionType="Float" x="565" y="0" width="113" height="18" />
+					<reportElement style="Detail" positionType="Float" x="565" y="0" width="113" height="18" uuid="e2501e7c-edd7-471b-8a3c-a60d0966c59f"/>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font size="14"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{telefono}]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement style="Detail" positionType="Float" x="678" y="0" width="113" height="18"/>
+					<reportElement style="Detail" positionType="Float" x="678" y="0" width="113" height="18" uuid="4ad42bec-e2e8-450c-a03e-2981bf868d01"/>
 					<textElement textAlignment="Center" verticalAlignment="Middle">
 						<font size="14"/>
 					</textElement>
@@ -200,7 +196,7 @@
 	<columnFooter>
 		<band height="7" splitType="Stretch">
 			<line>
-				<reportElement positionType="FixRelativeToBottom" x="0" y="3" width="555" height="1"/>
+				<reportElement positionType="FixRelativeToBottom" x="0" y="3" width="555" height="1" uuid="6373f1c4-d26b-45b9-b376-2d8beedc56bc"/>
 				<graphicElement>
 					<pen lineWidth="0.5" lineColor="#999999"/>
 				</graphicElement>
@@ -210,23 +206,23 @@
 	<pageFooter>
 		<band height="25" splitType="Stretch">
 			<frame>
-				<reportElement mode="Opaque" x="0" y="0" width="802" height="25" forecolor="#D0B48E" backcolor="#000000" />
+				<reportElement mode="Opaque" x="0" y="0" width="802" height="25" forecolor="#D0B48E" backcolor="#000000" uuid="b5d275f5-9252-4508-955b-41180ffbd331"/>
 				<textField evaluationTime="Report">
-					<reportElement style="Column header" x="757" y="3" width="40" height="20" forecolor="#FFFFFF" />
+					<reportElement style="Column header" x="757" y="3" width="40" height="20" forecolor="#FFFFFF" uuid="00e10fd6-068f-4299-8014-363c94ac870f"/>
 					<textElement verticalAlignment="Middle">
 						<font size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA[" " + $V{PAGE_NUMBER}]]></textFieldExpression>
 				</textField>
 				<textField>
-					<reportElement style="Column header" x="677" y="3" width="80" height="20" forecolor="#FFFFFF" />
+					<reportElement style="Column header" x="677" y="3" width="80" height="20" forecolor="#FFFFFF" uuid="be50b9b9-a232-4832-8733-75a27558b21e"/>
 					<textElement textAlignment="Right" verticalAlignment="Middle">
 						<font size="10" isBold="false"/>
 					</textElement>
 					<textFieldExpression><![CDATA["Page "+$V{PAGE_NUMBER}+" of"]]></textFieldExpression>
 				</textField>
 				<textField pattern="EEEEE dd MMMMM yyyy">
-					<reportElement style="Column header" x="2" y="3" width="197" height="20" forecolor="#FFFFFF"/>
+					<reportElement style="Column header" x="2" y="3" width="197" height="20" forecolor="#FFFFFF" uuid="acf12478-7ba2-4b25-998c-224e4e78c8b5"/>
 					<textElement verticalAlignment="Middle">
 						<font size="10" isBold="false"/>
 					</textElement>

@@ -129,6 +129,11 @@ public class Login extends javax.swing.JFrame {
                 jText_usuarioFocusLost(evt);
             }
         });
+        jText_usuario.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jText_usuarioActionPerformed(evt);
+            }
+        });
 
         jLabel_minimizar.setFont(new java.awt.Font("Lucida Sans", 1, 18)); // NOI18N
         jLabel_minimizar.setText("  - ");
@@ -264,67 +269,116 @@ public class Login extends javax.swing.JFrame {
     private void jbtnAcceso1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbtnAcceso1ActionPerformed
         // TODO add your handling code here:
         // Componentes de la interfaz (campos y botones)
+        PreparedStatement st = null;
+        ResultSet rs = null;
 
-        PreparedStatement st;
-        ResultSet rs;
-
-        // Obtener el nombre de usuario y la contraseña ingresados
-        String nombre_usuario = jText_usuario.getText();
+        // Obtener datos de los campos
+        String nombre_usuario = jText_usuario.getText().trim();
         String contraseña = String.valueOf(jPassword.getPassword());
 
-        // Encriptar la contraseña usando SHA-1
-        String sha1 = "";
+        // ===== VALIDACIONES ANTES DE ENCRIPTAR =====
+        // Validar que no estén vacíos o con el placeholder
+        if (nombre_usuario.isEmpty() || nombre_usuario.equalsIgnoreCase("Nombre de Usuario")) {
+            JOptionPane.showMessageDialog(null, "Por favor, ingresa tu nombre de usuario", "Usuario vacío", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
+        if (contraseña.isEmpty() || contraseña.equalsIgnoreCase("Contraseña")) {
+            JOptionPane.showMessageDialog(null, "Por favor, ingresa tu contraseña", "Contraseña vacía", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // ENCRIPTAR LA CONTRASEÑA CON SHA-1 
+        String sha1 = "";
         try {
-            // Inicializa el objeto MessageDigest con el algoritmo SHA-1
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
             digest.reset();
             digest.update(contraseña.getBytes("utf8"));
             sha1 = String.format("%040x", new BigInteger(1, digest.digest()));
+
         } catch (Exception e) {
-            e.printStackTrace(); // Manejo de excepciones
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error al procesar la contraseña: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
 
+        //  CONSULTAR EN LA BASE DE DATOS 
         try {
-             st = modelo.Conexion_DB.getConnection().prepareStatement(
-                "SELECT `nombre_usuario`, `contraseña` FROM `usuarios` WHERE `nombre_usuario` = ? AND `contraseña` = ?");
+            //Obtener TODOS los datos necesarios
+            String query = "SELECT `id`, `nombre_completo`, `nombre_usuario`, `contraseña`, `rol` "
+                    + "FROM `usuarios` "
+                    + "WHERE `nombre_usuario` = ? AND `contraseña` = ?";
 
-            // Verifica si los campos de usuario y contraseña están vacíos
-            if (nombre_usuario.trim().equals("nombre_usuario")) {
-                JOptionPane.showMessageDialog(null, "Por favor, ingresa tu nombre de usuario", "Usuario vacío", 2);
-            } else if (contraseña.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(null, "Por favor, ingresa tu contraseña", "Contraseña vacía", 2);
+            st = modelo.Conexion_DB.getConnection().prepareStatement(query);
+            st.setString(1, nombre_usuario);
+            st.setString(2, sha1);
+
+            System.out.println("Ejecutando query de autenticación...");
+
+            rs = st.executeQuery();
+
+            if (rs.next()) {
+                //  LOGIN EXITOSO
+                System.out.println("✅ Usuario encontrado en la base de datos");
+
+                // Obtener todos los datos del usuario
+                int idUsuario = rs.getInt("id");
+                String nombreCompleto = rs.getString("nombre_completo");
+                String usuarioDB = rs.getString("nombre_usuario");
+                String rolUsuario = rs.getString("rol");
+
+                System.out.println("ID: " + idUsuario);
+                System.out.println("Nombre: " + nombreCompleto);
+                System.out.println("Rol: " + rolUsuario);
+
+                //  INICIAR SESIÓN EN EL SISTEMA
+                modelo.Usuario_Sesion.getInstancia().iniciarSesion(
+                        idUsuario,
+                        nombreCompleto,
+                        usuarioDB,
+                        rolUsuario
+                );
+
+                //  ABRIR VENTANA PRINCIPAL
+                HmPrincipal form = new HmPrincipal();
+                form.pack();
+                form.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                form.setVisible(true);
+                form.setLocationRelativeTo(null);
+                form.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+                // Cerrar ventana de login
+                this.dispose();
+
             } else {
-                // Si ambos campos están completos, continúa con la verificación en la base de datos
-                st.setString(1, nombre_usuario);
-                st.setString(2, sha1);
-                rs = st.executeQuery();
-
-                if (rs.next()) {
-                    // Carga un nuevo formulario llamado HmPrincipal
-                    HmPrincipal form = new HmPrincipal();
-
-                    // Control de acceso basado en el nombre de usuario
-                    if (rs.getString("nombre_usuario").equals("claudia")) {
-                        form.jlabel_usuario.setVisible(false);
-                    }
-
-                    form.pack();
-                    form.setDatos(nombre_usuario, contraseña);
-                    form.setExtendedState(form.getExtendedState() | JFrame.MAXIMIZED_BOTH);
-                    form.setVisible(true);
-                    form.setLocationRelativeTo(null);
-                    form.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    this.dispose(); // Cierra el formulario de inicio de sesión
-                } else {
-                    JOptionPane.showMessageDialog(null, "Usuario o contraseña inválidos", "Error de inicio de sesión", 2);
-                }
+                //  LOGIN FALLIDO
+                System.out.println("❌ No se encontró el usuario con esas credenciales");
+                JOptionPane.showMessageDialog(null,
+                        "Usuario o contraseña incorrectos",
+                        "Error de autenticación",
+                        JOptionPane.ERROR_MESSAGE);
             }
+
         } catch (SQLException e) {
-    System.out.println("Error SQL: " + e.getMessage());
-    e.printStackTrace(); // Manejo de excepciones
-}
-    
+            System.out.println("❌ Error SQL: " + e.getMessage());
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                    "Error de conexión a la base de datos:\n" + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        } finally {
+            // CERRAR RECURSOS
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (st != null) {
+                    st.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
 
     }//GEN-LAST:event_jbtnAcceso1ActionPerformed
 
@@ -424,6 +478,10 @@ public class Login extends javax.swing.JFrame {
             jPassword.setForeground(new Color(153, 153, 153));  // Cambiar el color del texto a gris claro
         }
     }//GEN-LAST:event_jPasswordFocusLost
+
+    private void jText_usuarioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jText_usuarioActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jText_usuarioActionPerformed
 
     /**
      * @param args the command line arguments

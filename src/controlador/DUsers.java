@@ -21,12 +21,7 @@ import modelo.Conexion_DB;
  * @author piper
  */
 public class DUsers {
-
-    static DUsers getUserById(int i) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    Connection connection;
+  
     private Integer id;
     private String nombreCompleto;
     private String nombreUsuario;
@@ -36,16 +31,13 @@ public class DUsers {
     private String telefono;
     private String correoElectronico;
     private String contraseña;
-    
-    
-    
 
     public DUsers() {
-
     }
 
-    public DUsers(Integer id, String nombreCompleto, String nombreUsuario, String tipoDocumento, String numeroDocumento, String genero, String telefono, String correoElectronico, String contraseña ) {
-
+    public DUsers(Integer id, String nombreCompleto, String nombreUsuario, 
+                  String tipoDocumento, String numeroDocumento, String genero, 
+                  String telefono, String correoElectronico, String contraseña) {
         this.id = id;
         this.nombreCompleto = nombreCompleto;
         this.nombreUsuario = nombreUsuario;
@@ -55,10 +47,9 @@ public class DUsers {
         this.telefono = telefono;
         this.correoElectronico = correoElectronico;
         this.contraseña = contraseña;
-        
-        
     }
 
+    
     public Integer getId() {
         return id;
     }
@@ -98,8 +89,8 @@ public class DUsers {
     public void setNumeroDocumento(String numeroDocumento) {
         this.numeroDocumento = numeroDocumento;
     }
-    
-     public String getGenero() {
+
+    public String getGenero() {
         return genero;
     }
 
@@ -114,6 +105,7 @@ public class DUsers {
     public void setTelefono(String telefono) {
         this.telefono = telefono;
     }
+
     public String getCorreoElectronico() {
         return correoElectronico;
     }
@@ -130,13 +122,17 @@ public class DUsers {
         this.contraseña = contraseña;
     }
 
-    
-    public static void insertUser(DUsers usuarios) {
-        Connection con = modelo.Conexion_DB.getConnection();
-        PreparedStatement ps;
+     public static void insertUser(DUsers usuarios) {
+        Connection con = null;
+        PreparedStatement ps = null;
 
         try {
-            ps = con.prepareStatement("INSERT INTO `usuarios`(`nombre_completo`, `nombre_usuario`, `tipo_documento`, `numero_documento`, `genero`, `telefono`,`correo_electronico`, `contraseña`) VALUES (?,?,?,?,?,?,?,?)");
+            con = modelo.Conexion_DB.getConnection();
+            ps = con.prepareStatement(
+                "INSERT INTO `usuarios`(`nombre_completo`, `nombre_usuario`, " +
+                "`tipo_documento`, `numero_documento`, `genero`, `telefono`, " +
+                "`correo_electronico`, `contraseña`) VALUES (?,?,?,?,?,?,?,?)"
+            );
 
             ps.setString(1, usuarios.getNombreCompleto());
             ps.setString(2, usuarios.getNombreUsuario());
@@ -146,73 +142,96 @@ public class DUsers {
             ps.setString(6, usuarios.getTelefono());
             ps.setString(7, usuarios.getCorreoElectronico());
             ps.setString(8, usuarios.getContraseña());
-            
-            
 
+            // DEBUG
+            System.out.println("Insertando usuario en BD...");
+            System.out.println("Contraseña a guardar: " + usuarios.getContraseña());
+            System.out.println("Longitud: " + usuarios.getContraseña().length());
+            
             if (ps.executeUpdate() != 0) {
                 JOptionPane.showMessageDialog(null, "Nuevo usuario Agregado");
             } else {
-                JOptionPane.showMessageDialog(null, "Algo corre, valida los datos");
+                JOptionPane.showMessageDialog(null, "Algo falló, valida los datos");
             }
 
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, "Error al insertar usuario: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, 
+                "Error al insertar usuario: " + ex.getMessage(), 
+                "Error", JOptionPane.ERROR_MESSAGE);
             Logger.getLogger(DUsers.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (ps != null) ps.close();
+                if (con != null) con.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public ArrayList<DUsers> UsersList(String user) {
-
         ArrayList<DUsers> user_list = new ArrayList<>();
-        Connection cn = Conexion_DB.getConnection(); // Consistencia en la conexión con el código anterior
+        Connection cn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
 
-        PreparedStatement ps;
-        ResultSet rs;
-
-        String query = "SELECT `id`, `nombre_completo`, `nombre_usuario`,`tipo_documento`,`numero_documento`, `genero`, `telefono`, `correo_electronico`,`contraseña`,  FROM `usuarios`"; 
+               String query = "SELECT `id`, `nombre_completo`, `nombre_usuario`, " +
+                      "`tipo_documento`, `numero_documento`, `genero`, `telefono`, " +
+                      "`correo_electronico`, `contraseña` FROM `usuarios`";
 
         try {
-             ps = connection.prepareStatement(query);
-            ps.setString(1, "%" + user + "%");
+            cn = Conexion_DB.getConnection();
+            ps = cn.prepareStatement(query);  
             rs = ps.executeQuery();
             
-            DUsers usuarios;
-            // El orden del constructor coincide con el orden del SELECT
             while (rs.next()) {
-                usuarios = new DUsers(
-                        rs.getInt("id"),
-                        rs.getString("nombre_completo"),
-                        rs.getString("nombre_usuario"),
-                        rs.getString("tipo_documento"),
-                        rs.getString("numero_documento"),
-                        rs.getString("genero"),
-                        rs.getString("telefono"),
-                        rs.getString("correo_electronico"),
-                        rs.getString("contraseña")
-                        
-                        
+                DUsers usuarios = new DUsers(
+                    rs.getInt("id"),
+                    rs.getString("nombre_completo"),
+                    rs.getString("nombre_usuario"),
+                    rs.getString("tipo_documento"),
+                    rs.getString("numero_documento"),
+                    rs.getString("genero"),
+                    rs.getString("telefono"),
+                    rs.getString("correo_electronico"),
+                    rs.getString("contraseña")
                 );
-                user_list.add(usuarios); // Añadir el usuario a la lista
+                user_list.add(usuarios);
             }
 
         } catch (SQLException ex) {
             Logger.getLogger(DUsers.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (ps != null) ps.close();
+                if (cn != null) cn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
-        return user_list; // Retornar la lista de usuarios
+        return user_list;
     }
-    Connection cn = Conexion_DB.getConnection();
 
     public DefaultTableModel mostrarUsuarios(DUsers misUsuarios) {
         DefaultTableModel miModelo = null;
+        Connection cn = null;
+        CallableStatement cst = null;
+        ResultSet rs = null;
+        
         try {
+            cn = Conexion_DB.getConnection();
+            
             // Definir los títulos de las columnas de la tabla
-            String titulos[] = {"id", "Nombre", "Usuario", "TipoId", "Documento", "Genero", "Telefono", "Correo", "Contraseña" };
-            String dts[] = new String[8];
+            String titulos[] = {"id", "Nombre", "Usuario", "TipoId", "Documento", 
+                               "Genero", "Telefono", "Correo", "Contraseña"};
+            String dts[] = new String[9];  // CORREGIDO: eran 8, necesitas 9
             miModelo = new DefaultTableModel(null, titulos);
-            // Llamada al procedimiento almacenado para mostrar/buscar usuarios
-            CallableStatement cst = cn.prepareCall("{call sp_mostrarbuscar_usuarios(?,?,?,?,?,?,?,?)}");
+            
+            // Llamada al procedimiento almacenado
+            cst = cn.prepareCall("{call sp_mostrarbuscar_usuarios(?)}");
             cst.setString(1, misUsuarios.getNombreUsuario());
-            ResultSet rs = cst.executeQuery();
+            rs = cst.executeQuery();
 
             // Recorrer los resultados y agregar las filas al modelo de tabla
             while (rs.next()) {
@@ -225,23 +244,35 @@ public class DUsers {
                 dts[6] = rs.getString("Telefono");
                 dts[7] = rs.getString("Correo");
                 dts[8] = rs.getString("Contraseña");
-                
-                
+
                 miModelo.addRow(dts);
-            }// Manejo de excepciones SQL
+            }
         } catch (SQLException ex) {
+            Logger.getLogger(DUsers.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (cst != null) cst.close();
+                if (cn != null) cn.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
-        return miModelo;// Retornar el modelo de tabla con los usuarios cargados
+        return miModelo;
     }
 
     public static void actualizarUsuarios(DUsers misUsuarios) {
-        Connection con = modelo.Conexion_DB.getConnection();
-        PreparedStatement ps;
+        Connection con = null;
+        PreparedStatement ps = null;
 
         try {
-            ps = con.prepareStatement("UPDATE `usuarios` SET `nombre_completo`=?, `nombre_usuario`=?, `tipo_documento`=?,`numero_documento`=?, `genero`=?, `telefono`=?, `correo_electronico`=?, `contraseña`=?  WHERE `id` = ?");
+            con = modelo.Conexion_DB.getConnection();
+            ps = con.prepareStatement(
+                "UPDATE `usuarios` SET `nombre_completo`=?, `nombre_usuario`=?, " +
+                "`tipo_documento`=?, `numero_documento`=?, `genero`=?, `telefono`=?, " +
+                "`correo_electronico`=?, `contraseña`=? WHERE `id` = ?"
+            );
 
-            // Establecer los parámetros para la consulta
             ps.setString(1, misUsuarios.getNombreCompleto());
             ps.setString(2, misUsuarios.getNombreUsuario());
             ps.setString(3, misUsuarios.getTipoDocumento());
@@ -252,43 +283,57 @@ public class DUsers {
             ps.setString(8, misUsuarios.getContraseña());
             ps.setInt(9, misUsuarios.getId());
 
-            // Ejecutar la actualización
             if (ps.executeUpdate() != 0) {
                 JOptionPane.showMessageDialog(null, "Usuario Actualizado");
             } else {
-                JOptionPane.showMessageDialog(null, "Algo salio mal");
+                JOptionPane.showMessageDialog(null, "Algo salió mal");
             }
         } catch (SQLException ex) {
             Logger.getLogger(DUsers.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (ps != null) ps.close();
+                if (con != null) con.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
     public static void eliminarUsuarios(Integer id) {
-        Connection con = modelo.Conexion_DB.getConnection();
-        PreparedStatement ps;
+        Connection con = null;
+        PreparedStatement ps = null;
 
         try {
+            con = modelo.Conexion_DB.getConnection();
             ps = con.prepareStatement("DELETE FROM `usuarios` WHERE `id` = ?");
-           
             ps.setInt(1, id);
 
-            // show a confirmation message before deleting the product
-            int YesOrNo = JOptionPane.showConfirmDialog(null, "Realmente desea eliminar este usuario", "Eliminar usuarios", JOptionPane.YES_NO_OPTION);
+            int YesOrNo = JOptionPane.showConfirmDialog(null, 
+                "Realmente desea eliminar este usuario", 
+                "Eliminar usuarios", JOptionPane.YES_NO_OPTION);
+                
             if (YesOrNo == 0) {
-
                 if (ps.executeUpdate() != 0) {
                     JOptionPane.showMessageDialog(null, "Usuario Eliminado");
-
                 } else {
-                    JOptionPane.showMessageDialog(null, "Algo salio mal");
-
+                    JOptionPane.showMessageDialog(null, "Algo salió mal");
                 }
-
             }
 
         } catch (SQLException ex) {
             Logger.getLogger(DUsers.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (ps != null) ps.close();
+                if (con != null) con.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
     }
 
+    static DUsers getUserById(int i) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

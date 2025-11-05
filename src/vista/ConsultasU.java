@@ -45,6 +45,8 @@ public class ConsultasU extends javax.swing.JInternalFrame {
         setSize(595, 460); // Establece el tamaño de la ventana
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Permite cerrar la ventana
         setVisible(true); // Haz la ventana visible
+        
+        jTextField_ID.setEnabled(false);
 
         //cargo la tabla que nos trae y nos muestra los registros de la base de datos contenidos en la trabla users
         populateJtable();

@@ -104,7 +104,7 @@ public class FrmRegister extends javax.swing.JFrame {
 
         jComboBox3.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Cédula de Ciudadanía", "Cédula de extranjería" }));
         jPanel4.add(jComboBox3);
-        jComboBox3.setBounds(170, 160, 150, 22);
+        jComboBox3.setBounds(170, 160, 152, 22);
 
         jLabel17.setText("Tipo de documento:");
         jPanel4.add(jLabel17);
@@ -124,11 +124,11 @@ public class FrmRegister extends javax.swing.JFrame {
 
         jRadioButton_mujer.setText("Mujer");
         jPanel4.add(jRadioButton_mujer);
-        jRadioButton_mujer.setBounds(170, 240, 54, 21);
+        jRadioButton_mujer.setBounds(170, 240, 54, 20);
 
         jRadioButton_hombre.setText("Hombre");
         jPanel4.add(jRadioButton_hombre);
-        jRadioButton_hombre.setBounds(250, 240, 67, 21);
+        jRadioButton_hombre.setBounds(250, 240, 67, 20);
 
         jLabel21.setText("Numero telefonico:");
         jPanel4.add(jLabel21);
@@ -153,7 +153,7 @@ public class FrmRegister extends javax.swing.JFrame {
             }
         });
         jPanel4.add(jBtn_registrar);
-        jBtn_registrar.setBounds(130, 460, 140, 39);
+        jBtn_registrar.setBounds(130, 460, 140, 38);
 
         jTextField_nombre_completo.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.LOWERED, null, new java.awt.Color(153, 153, 153), null, null));
         jPanel4.add(jTextField_nombre_completo);

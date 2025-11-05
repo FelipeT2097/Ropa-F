@@ -9,12 +9,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.Timer;
-
 
 /**
  *
@@ -22,13 +23,18 @@ import javax.swing.Timer;
  */
 public class HmPrincipal extends javax.swing.JFrame {
 
-       /**
+    /**
      * Creates new form HmPrincipal
      */
     public HmPrincipal() {
         initComponents();
-        
-      /*  ImageIcon icFacturas = new ImageIcon(getClass().getResource("/imagenes/Factura.png"));
+
+        crearPanelUsuarioEnBarra();
+
+        timer.start();
+        configurarPermisosPorRol();
+
+        /*  ImageIcon icFacturas = new ImageIcon(getClass().getResource("/imagenes/Factura.png"));
         Icon iconoFac = new ImageIcon(icFacturas.getImage().getScaledInstance(50,55, Image.SCALE_DEFAULT));
         jButton_factura.setIcon(iconoFac);
         
@@ -39,42 +45,152 @@ public class HmPrincipal extends javax.swing.JFrame {
         ImageIcon icAlmacen = new ImageIcon(getClass().getResource("/imagenes/Almacen.png"));
         Icon iconoAlm = new ImageIcon(icAlmacen.getImage().getScaledInstance(50,55, Image.SCALE_DEFAULT));
         jButton_almacen.setIcon(iconoAlm); */
-        
         ImageIcon mGestionUsuarios = new ImageIcon(getClass().getResource("/imagenes/GUsuarios.png"));
-        Icon iconoGesUsuarios = new ImageIcon(mGestionUsuarios.getImage().getScaledInstance(20,15, Image.SCALE_DEFAULT));
+        Icon iconoGesUsuarios = new ImageIcon(mGestionUsuarios.getImage().getScaledInstance(20, 15, Image.SCALE_DEFAULT));
         jMenu_GUSUARIOS.setIcon(iconoGesUsuarios);
-        
+
         ImageIcon GProveedores = new ImageIcon(getClass().getResource("/imagenes/proveedor.png"));
-        Icon iconProveedores = new ImageIcon(GProveedores.getImage().getScaledInstance(20,15, Image.SCALE_DEFAULT));
+        Icon iconProveedores = new ImageIcon(GProveedores.getImage().getScaledInstance(20, 15, Image.SCALE_DEFAULT));
         jMenu_gestion_proveedores.setIcon(iconProveedores);
-        
+
         ImageIcon mCatalogos = new ImageIcon(getClass().getResource("/imagenes/catalogo.png"));
-        Icon iconoCatalogos = new ImageIcon(mCatalogos.getImage().getScaledInstance(20,15, Image.SCALE_DEFAULT));
+        Icon iconoCatalogos = new ImageIcon(mCatalogos.getImage().getScaledInstance(20, 15, Image.SCALE_DEFAULT));
         jMenu_CATALOGO.setIcon(iconoCatalogos);
-              
+        
+        ImageIcon mClientes = new ImageIcon(getClass().getResource("/imagenes/GUsuarios.png"));
+        Icon iconoClientes = new ImageIcon(mClientes.getImage().getScaledInstance(20, 15, Image.SCALE_DEFAULT));
+        jMenu_gestion_clientes.setIcon(iconoGesUsuarios);
+
         timer.start();
-              
+
+        // Configurar permisos según el rol
+        configurarPermisosPorRol();
+
+        // Mostrar información del usuario
+        mostrarInfoUsuario();
     }
 
-        Timer timer = new Timer(1000, new ActionListener(){
-            public void actionPerformed(ActionEvent e){
-                Calendar cal = new GregorianCalendar();
-                int hh, mm, ss, dia, mes, aa;
-                hh = cal.get(Calendar.HOUR_OF_DAY);
-                ss = cal.get(Calendar.SECOND);
-                mm = cal.get(Calendar.MINUTE);
-                
-                dia = cal.get(Calendar.DAY_OF_MONTH);
-                mes = cal.get(Calendar.MONTH);
-                aa = cal.get(Calendar.YEAR);
-                
-                jLabel_hora.setText(hh+":"+mm+":"+ss);
-                jLabel_fecha.setText(dia+"/"+(mes+1)+"/"+aa);
-                
-                }
+    /**
+     * Crea un panel con info del usuario en la barra de menú
+     */
+    private void crearPanelUsuarioEnBarra() {
+        modelo.Usuario_Sesion sesion = modelo.Usuario_Sesion.getInstancia();
+
+        // Crear un panel para el usuario
+        javax.swing.JPanel panelUsuario = new javax.swing.JPanel();
+        panelUsuario.setOpaque(false);
+        panelUsuario.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
+
+        // Label con el nombre del usuario
+        javax.swing.JLabel lblUsuario = new javax.swing.JLabel(
+                "👤 " + sesion.getNombreUsuario() + " (" + sesion.getRol().toUpperCase() + ")"
+        );
+        lblUsuario.setFont(new java.awt.Font("Lucida Sans", java.awt.Font.BOLD, 12));
+        lblUsuario.setForeground(new java.awt.Color(0, 102, 204));
+
+        // Botón de cerrar sesión
+        javax.swing.JButton btnCerrarSesion = new javax.swing.JButton("Cerrar Sesión");
+        btnCerrarSesion.setFont(new java.awt.Font("Lucida Sans", java.awt.Font.PLAIN, 11));
+        btnCerrarSesion.setFocusPainted(false);
+        btnCerrarSesion.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnCerrarSesion.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                cerrarSesion();
+            }
         });
-            
-    
+
+        // Agregar componentes al panel
+        panelUsuario.add(lblUsuario);
+        panelUsuario.add(btnCerrarSesion);
+
+        // Agregar glue para empujar todo a la derecha
+        jMenuBar1.add(javax.swing.Box.createHorizontalGlue());
+
+        // Agregar el panel a la barra de menú
+        jMenuBar1.add(panelUsuario);
+    }
+
+    /**
+     * Cerrar sesión del usuario
+     */
+    private void cerrarSesion() {
+        int respuesta = JOptionPane.showConfirmDialog(
+                this,
+                "¿Está seguro que desea cerrar sesión?",
+                "Cerrar Sesión",
+                JOptionPane.YES_NO_OPTION
+        );
+
+        if (respuesta == JOptionPane.YES_OPTION) {
+            modelo.Usuario_Sesion.getInstancia().cerrarSesion();
+            this.dispose();
+
+            Login login = new Login();
+            login.setVisible(true);
+        }
+    }
+
+    /**
+     * Configura qué menús puede ver cada rol
+     */
+    private void configurarPermisosPorRol() {
+        modelo.Usuario_Sesion sesion = modelo.Usuario_Sesion.getInstancia();
+
+        if (sesion.esVendedor()) {
+            // Los vendedores NO pueden gestionar usuarios
+            jMenu_GUSUARIOS.setVisible(false);
+
+            //❌ Los vendedores NO pueden gestionar proveedores
+            jMenu_gestion_proveedores.setVisible(false);
+
+            // Solo pueden ver catálogo y hacer ventas
+            jMenu_CATALOGO.setVisible(true);
+
+        } else if (sesion.esAlmacenista()) {
+            // Los almacenistas NO pueden gestionar usuarios
+            jMenu_GUSUARIOS.setVisible(false);
+
+            //  Pueden gestionar proveedores
+            jMenu_gestion_proveedores.setVisible(true);
+
+            // Pueden gestionar catálogo/inventario
+            jMenu_CATALOGO.setVisible(true);
+
+        } else if (sesion.esAdmin()) {
+            // Los administradores ven TODO
+            jMenu_GUSUARIOS.setVisible(true);
+            jMenu_gestion_proveedores.setVisible(true);
+            jMenu_CATALOGO.setVisible(true);
+        }
+    }
+
+    /**
+     * Muestra info del usuario logueado
+     */
+    private void mostrarInfoUsuario() {
+        modelo.Usuario_Sesion sesion = modelo.Usuario_Sesion.getInstancia();
+
+        jlabel_usuario.setText(sesion.getNombreUsuario() + " (" + sesion.getRol().toUpperCase() + ")");
+    }
+
+    Timer timer = new Timer(1000, new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            Calendar cal = new GregorianCalendar();
+            int hh, mm, ss, dia, mes, aa;
+            hh = cal.get(Calendar.HOUR_OF_DAY);
+            ss = cal.get(Calendar.SECOND);
+            mm = cal.get(Calendar.MINUTE);
+
+            dia = cal.get(Calendar.DAY_OF_MONTH);
+            mes = cal.get(Calendar.MONTH);
+            aa = cal.get(Calendar.YEAR);
+
+            jLabel_hora.setText(hh + ":" + mm + ":" + ss);
+            jLabel_fecha.setText(dia + "/" + (mes + 1) + "/" + aa);
+
+        }
+    });
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -84,6 +200,7 @@ public class HmPrincipal extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jMenu1 = new javax.swing.JMenu();
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
@@ -98,8 +215,12 @@ public class HmPrincipal extends javax.swing.JFrame {
         jMenuItem_Usuarios = new javax.swing.JMenuItem();
         jMenu_gestion_proveedores = new javax.swing.JMenu();
         jMenuItem1 = new javax.swing.JMenuItem();
+        jMenu_gestion_clientes = new javax.swing.JMenu();
+        jMenuItem2 = new javax.swing.JMenuItem();
         jMenu_CATALOGO = new javax.swing.JMenu();
         jMenuItem_stock = new javax.swing.JMenuItem();
+
+        jMenu1.setText("jMenu1");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -174,7 +295,7 @@ public class HmPrincipal extends javax.swing.JFrame {
                             .addComponent(jLabel3)
                             .addComponent(jLabel_fecha)))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(43, 43, 43)
+                        .addContainerGap()
                         .addComponent(jDesktopPane_escritorio, javax.swing.GroupLayout.PREFERRED_SIZE, 700, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(79, 79, 79))
         );
@@ -204,6 +325,18 @@ public class HmPrincipal extends javax.swing.JFrame {
         jMenu_gestion_proveedores.add(jMenuItem1);
 
         jMenuBar1.add(jMenu_gestion_proveedores);
+
+        jMenu_gestion_clientes.setText("Gestion de Clientes");
+
+        jMenuItem2.setText("Clientes");
+        jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem2ActionPerformed(evt);
+            }
+        });
+        jMenu_gestion_clientes.add(jMenuItem2);
+
+        jMenuBar1.add(jMenu_gestion_clientes);
 
         jMenu_CATALOGO.setText("Catalogo");
 
@@ -242,6 +375,13 @@ public class HmPrincipal extends javax.swing.JFrame {
         jDesktopPane_escritorio.add(Bproveedores);
         Bproveedores.show();
     }//GEN-LAST:event_jMenuItem1ActionPerformed
+
+    private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
+        // TODO add your handling code here:
+        ConsultaClientes Bclientes = new ConsultaClientes();
+        jDesktopPane_escritorio.add(Bclientes);
+        Bclientes.show();
+    }//GEN-LAST:event_jMenuItem2ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -286,20 +426,22 @@ public class HmPrincipal extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel_fecha;
     private javax.swing.JLabel jLabel_hora;
+    private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem_Usuarios;
     private javax.swing.JMenuItem jMenuItem_stock;
     private javax.swing.JMenu jMenu_CATALOGO;
     private javax.swing.JMenu jMenu_GUSUARIOS;
+    private javax.swing.JMenu jMenu_gestion_clientes;
     private javax.swing.JMenu jMenu_gestion_proveedores;
     private javax.swing.JPanel jPanel1;
     public javax.swing.JLabel jlabel_usuario;
     // End of variables declaration//GEN-END:variables
 
-    public void setDatos (String nombre_usuario, String contraseña){
+    /*public void setDatos (String nombre_usuario, String contraseña){
         jlabel_usuario.setText(nombre_usuario);
         
-        } 
-    }
-
+        } */
+}
