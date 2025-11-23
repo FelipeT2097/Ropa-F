@@ -243,7 +243,6 @@ public class FrmRegister extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jText_inicio_sesionMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jText_inicio_sesionMouseClicked
-        // TODO add your handling code here:
         // Cerrar el JFrame actual
         dispose();
 
@@ -258,20 +257,17 @@ public class FrmRegister extends javax.swing.JFrame {
     }//GEN-LAST:event_jText_inicio_sesionMouseClicked
 
     private void jBtn_registrarMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jBtn_registrarMouseEntered
-        // TODO add your handling code here:
         // set jbutton background
         jBtn_registrar.setBackground(new Color(225, 20, 2));
     }//GEN-LAST:event_jBtn_registrarMouseEntered
 
     private void jBtn_registrarMouseExited(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jBtn_registrarMouseExited
-        // TODO add your handling code here:
         // set jbutton background
         jBtn_registrar.setBackground(new Color(235, 47, 6));
     }//GEN-LAST:event_jBtn_registrarMouseExited
 
     private void jBtn_registrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtn_registrarActionPerformed
-        // TODO add your handling code here:
-         // Obtener los datos de los campos
+        // Obtener los datos de los campos
     String nombreCompleto = jTextField_nombre_completo.getText();
     String nombreUsuario = jTextField_nombre_usuario.getText();
     String tipoId = (String) jComboBox3.getSelectedItem();

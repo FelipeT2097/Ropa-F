@@ -237,7 +237,6 @@ public class Inventario extends javax.swing.JInternalFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButton_agregar_productActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_agregar_productActionPerformed
-        // TODO add your handling code here:
         Agregar_Productos agregarProductos = new Agregar_Productos();
         agregarProductos.pack();
         agregarProductos.setVisible(true);
@@ -246,17 +245,14 @@ public class Inventario extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_jButton_agregar_productActionPerformed
 
     private void jButton_refrescarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_refrescarActionPerformed
-        // TODO add your handling code here:
         populateJtable("");
     }//GEN-LAST:event_jButton_refrescarActionPerformed
 
     private void jButton_buscar_productActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_buscar_productActionPerformed
-        // TODO add your handling code here:
         populateJtable(jTextField_busqueda_products.getText());
     }//GEN-LAST:event_jButton_buscar_productActionPerformed
 
     private void jButton_eliminar_productActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_eliminar_productActionPerformed
-        // TODO add your handling code here:
         try {
             Integer rowIndex = jTable_productos.getSelectedRow();
             Integer id = Integer.valueOf(jTable_productos.getValueAt(rowIndex, 0).toString());
@@ -267,8 +263,7 @@ public class Inventario extends javax.swing.JInternalFrame {
     }//GEN-LAST:event_jButton_eliminar_productActionPerformed
 
     private void jButton_imprimirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_imprimirActionPerformed
-        // TODO add your handling code here:
-         // si se oprime el botón Imprimir
+        // si se oprime el botón Imprimir
         if (jButton_imprimir.getText().equals("Imprimir")) {
             try {
                 InputStream datosReporte = Utilidad.inputStreamReporte("RRProductos.jrxml");
