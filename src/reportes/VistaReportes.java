@@ -20,7 +20,7 @@ import net.sf.jasperreports.engine.JasperPrintManager;
 import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.view.JasperViewer;
 import util.JrxmlFiltro;
-import vista.ConsultasU;
+import vista.ConsultasUsuarios;
 
 /**
  *
@@ -40,7 +40,7 @@ public class VistaReportes {
             // conexion a la base de datos
             //  ConexionBaseDatos basedatos = new ConexionBaseDatos();
             // se coencta al SMDB
-            Connection con = modelo.Conexion_DB.getConnection();
+            Connection con = modelo.ConexionDB.getConnection();
             //   PreparedStatement ps;
 
             // basedatos.conectar();
@@ -54,7 +54,7 @@ public class VistaReportes {
             JasperViewer visor = new JasperViewer(print);
             JasperViewer.viewReport(print, true);
             visor.setExtendedState(JFrame.MAXIMIZED_BOTH);
-            ConsultasU.ventanaPrincipal.setExtendedState(JFrame.ICONIFIED);
+            ConsultasUsuarios.ventanaPrincipal.setExtendedState(JFrame.ICONIFIED);
         } catch (Exception e) {
             throw new Exception("Error al genrar el Reporte " + e.getMessage());
         }
@@ -66,7 +66,7 @@ public class VistaReportes {
             JasperReport reporte = JasperCompileManager.compileReport(ioReporte);
             // conexion a la base de datos
             // se conecta al SMDB
-            Connection con = modelo.Conexion_DB.getConnection();
+            Connection con = modelo.ConexionDB.getConnection();
             // se coencta al SMDB
             // basedatos.conectar();
             // rellena el reporte con los datos de la bd, la pasa el reporte compilado, los parametros y la conexion a la BD
@@ -119,7 +119,7 @@ public class VistaReportes {
         // en este caso solo archivos de con extencion .jrxml
         ventanaAbrirFichero.setFileFilter(new JrxmlFiltro());
         // muestro la ventana de abrir
-        int respusta = ventanaAbrirFichero.showOpenDialog(ConsultasU.ventanaPrincipal);
+        int respusta = ventanaAbrirFichero.showOpenDialog(ConsultasUsuarios.ventanaPrincipal);
         // verifico si se oprimio el boton abrir o el boton cancelar (no entra al if)
         if (respusta == JFileChooser.APPROVE_OPTION) {
             // obtengo el fichero seleccinado desde la ventana abrir

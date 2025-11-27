@@ -45,7 +45,7 @@ public class TablaProducto extends AbstractTableModel {
     }
 
     // Método para añadir el MouseListener a la JTable
-    public void addMouseListenerToTable(JTable jTable_productos, controlador.Producto producto) {
+   /* public void addMouseListenerToTable(JTable jTable_productos, controlador.Producto producto) {
         jTable_productos.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -76,5 +76,5 @@ public class TablaProducto extends AbstractTableModel {
                 }
             }
         });
-    }
+    }*/
 }

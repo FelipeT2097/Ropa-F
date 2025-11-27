@@ -308,13 +308,13 @@ public class FrmRegister extends javax.swing.JFrame {
             genero = "Mujer";
         }
         
-        controlador.DUsers usuarios;
+        modelo.Usuarios usuarios;
         // Crear un objeto de usuario
-        usuarios = new controlador.DUsers(1, nombreCompleto, nombreUsuario, tipoId, numeroDocumento, genero, telefono, correo, sha1);
+        usuarios = new modelo.Usuarios(1, nombreCompleto, nombreUsuario, tipoId, numeroDocumento, genero, telefono, correo, sha1);
 
         // Intentar insertar el usuario en la base de datos
         try {
-            controlador.DUsers.insertUser(usuarios);
+            modelo.Usuarios.insertUser(usuarios);
             JOptionPane.showMessageDialog(null, "Registrado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             mostrarLogin(); // Redirigir a la ventana de inicio de sesión
         } catch (Exception e) {

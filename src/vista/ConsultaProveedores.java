@@ -4,18 +4,14 @@
  */
 package vista;
 
-import controlador.DProveedores;
-import static controlador.DProveedores.actualizarProveedores;
-import static controlador.DProveedores.insertarProveedores;
-import controlador.DUsers;
-import static controlador.DUsers.insertUser;
+import modelo.Proveedores;
+
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.io.InputStream;
-import java.math.BigInteger;
-import java.security.MessageDigest;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,7 +26,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-import modelo.Usuario_Sesion;
+
 import reportes.VistaReportes;
 import util.Utilidad;
 
@@ -40,7 +36,7 @@ import util.Utilidad;
  */
 public class ConsultaProveedores extends javax.swing.JInternalFrame {
 
-    private ArrayList<DProveedores> proveeListCache;
+    private ArrayList<Proveedores> proveeListCache;
 
     public ConsultaProveedores() {
         super("Consultas", true, true, true, true);
@@ -121,7 +117,7 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
         }
 
         // Obtener el proveedor UNA sola vez
-        DProveedores proveedor = proveeListCache.get(index);
+        Proveedores proveedor = proveeListCache.get(index);
 
         // Asignar valores a los campos del formulario
         jTextField_ID.setText(Integer.toString(proveedor.getId()));
@@ -577,7 +573,7 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
         if (!jTextField_ID.getText().equals("")) {
             try {
                 int id_proveedores = Integer.parseInt(jTextField_ID.getText());
-                controlador.DProveedores.eliminarProveedor(id_proveedores);
+                modelo.Proveedores.eliminarProveedor(id_proveedores);
                 populateJtable("");
 
             } catch (Exception ex) {
@@ -621,13 +617,13 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
                 int idProveedor = (int) jTable_Proveedores.getValueAt(selectedRow, 0);
 
                 // Crear el objeto proveedores con los datos del formulario
-                controlador.DProveedores proveedores = new DProveedores(
+                modelo.Proveedores proveedores = new Proveedores(
                     idProveedor, nombreCompleto, tipoId, numeroDocumento,
                     genero, telefono, correoElectronico
                 );
 
                 // Actualizar el proveedor
-                controlador.DProveedores.actualizarProveedores(proveedores);
+                modelo.Proveedores.actualizarProveedores(proveedores);
 
                 // Recargar la tabla después de actualizar
                 populateJtable("");
@@ -650,7 +646,7 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
     private void jButton_insertarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_insertarActionPerformed
         // TODO add your handling code here:
         // Crear un nuevo objeto DUsers
-        DProveedores proveedores = new DProveedores();
+        Proveedores proveedores = new Proveedores();
 
         // Obtener los valores de los campos de texto
         proveedores.setNombreProveedor(jTextField_NOMBRE_PROVEEDOR.getText());
@@ -670,7 +666,7 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
         proveedores.setCorreoElectronico(jTextField2_correo.getText());
 
         // Llamar al método para insertar el usuario
-        controlador.DProveedores.insertarProveedores(proveedores);
+        modelo.Proveedores.insertarProveedores(proveedores);
     }//GEN-LAST:event_jButton_insertarActionPerformed
 
     private void jTable_ProveedoresMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable_ProveedoresMouseClicked
@@ -701,16 +697,16 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jRadioButton_MASCULINOActionPerformed
 
-    public ArrayList<DProveedores> idveeList() {
-        ArrayList<DProveedores> proveeList = new ArrayList<>();
+    public ArrayList<Proveedores> idveeList() {
+        ArrayList<Proveedores> proveeList = new ArrayList<>();
         String query = "SELECT * FROM proveedores";
 
-        try (Connection con = modelo.Conexion_DB.getConnection();
+        try (Connection con = modelo.ConexionDB.getConnection();
                 Statement st = con.createStatement();
                 ResultSet rs = st.executeQuery(query)) {
 
             while (rs.next()) {
-                DProveedores proveedores = new DProveedores(
+                Proveedores proveedores = new Proveedores(
                         rs.getInt("id"),
                         rs.getString("nombre_proveedor"),
                         rs.getString("tipo_documento"),
@@ -803,8 +799,8 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
     private javax.swing.JTextField jTextField_TELEFONO;
     // End of variables declaration//GEN-END:variables
 
-    private ArrayList<DProveedores> getProveeList() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private ArrayList<Proveedores> getProveeList() {
+        return idveeList(); 
     }
 
 }

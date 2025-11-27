@@ -121,6 +121,7 @@ public class Login extends javax.swing.JFrame {
 
         jText_usuario.setFont(new java.awt.Font("Lucida Sans", 0, 12)); // NOI18N
         jText_usuario.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED, new java.awt.Color(153, 153, 153), new java.awt.Color(153, 153, 153), new java.awt.Color(153, 153, 153), new java.awt.Color(153, 153, 153)));
+        jText_usuario.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
         jText_usuario.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 jText_usuarioFocusGained(evt);
@@ -309,7 +310,7 @@ public class Login extends javax.swing.JFrame {
                     + "FROM `usuarios` "
                     + "WHERE `nombre_usuario` = ? AND `contraseña` = ?";
 
-            st = modelo.Conexion_DB.getConnection().prepareStatement(query);
+            st = modelo.ConexionDB.getConnection().prepareStatement(query);
             st.setString(1, nombre_usuario);
             st.setString(2, sha1);
 
@@ -319,7 +320,7 @@ public class Login extends javax.swing.JFrame {
 
             if (rs.next()) {
                 //  LOGIN EXITOSO
-                System.out.println("✅ Usuario encontrado en la base de datos");
+                System.out.println("Usuario encontrado en la base de datos");
 
                 // Obtener todos los datos del usuario
                 int idUsuario = rs.getInt("id");
@@ -340,7 +341,7 @@ public class Login extends javax.swing.JFrame {
                 );
 
                 //  ABRIR VENTANA PRINCIPAL
-                HmPrincipal form = new HmPrincipal();
+                Principal form = new Principal();
                 form.pack();
                 form.setExtendedState(JFrame.MAXIMIZED_BOTH);
                 form.setVisible(true);
@@ -352,7 +353,7 @@ public class Login extends javax.swing.JFrame {
 
             } else {
                 //  LOGIN FALLIDO
-                System.out.println("❌ No se encontró el usuario con esas credenciales");
+                System.out.println("No se encontró el usuario con esas credenciales");
                 JOptionPane.showMessageDialog(null,
                         "Usuario o contraseña incorrectos",
                         "Error de autenticación",
@@ -360,7 +361,7 @@ public class Login extends javax.swing.JFrame {
             }
 
         } catch (SQLException e) {
-            System.out.println("❌ Error SQL: " + e.getMessage());
+            System.out.println("Error SQL: " + e.getMessage());
             e.printStackTrace();
             JOptionPane.showMessageDialog(null,
                     "Error de conexión a la base de datos:\n" + e.getMessage(),

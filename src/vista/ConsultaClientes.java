@@ -4,8 +4,8 @@
  */
 package vista;
 
-import controlador.DClientes;
-import controlador.DProveedores;
+import modelo.Clientes;
+import modelo.Proveedores;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -34,7 +34,7 @@ import util.Utilidad;
  */
 public class ConsultaClientes extends javax.swing.JInternalFrame {
 
-    private ArrayList<DClientes> clienListCache;
+    private ArrayList<Clientes> clienListCache;
 
     public ConsultaClientes() {
         super("Consultas", true, true, true, true);
@@ -125,7 +125,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         }
 
         //Obtener el proveedor UNA sola vez
-        DClientes clientes = clienListCache.get(index);
+        Clientes clientes = clienListCache.get(index);
 
         // Asignar valores a los campos del formulario
         jTextField_ID.setText(Integer.toString(clientes.getId()));
@@ -577,7 +577,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
             return;
         }
         int idClienteEliminar = Integer.parseInt(this.jTable_Clientes.getValueAt(filaSeleccionada, 0).toString());
-        DClientes.eliminarCliente(idClienteEliminar);
+        Clientes.eliminarCliente(idClienteEliminar);
         this.cargarTablaClientes();
 
         this.limpiarCampos();
@@ -623,7 +623,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
     private void jButton_insertarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_insertarActionPerformed
         // TODO add your handling code here:
         // Crear un nuevo objeto DUsers
-        DClientes clientes = new DClientes();
+        Clientes clientes = new Clientes();
 
         // Obtener los valores de los campos de texto
         clientes.setNombreCompleto(jTextField_nombre_cliente.getText());
@@ -643,7 +643,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         clientes.setCorreoElectronico(jTextField2_correo.getText());
 
         // Llamar al método para insertar el usuario
-        controlador.DClientes.insertarClientes(clientes);
+        modelo.Clientes.insertarClientes(clientes);
     }//GEN-LAST:event_jButton_insertarActionPerformed
 
     private void jButton1_actualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1_actualizarActionPerformed
@@ -676,13 +676,13 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
 
                 int idCliente = (int) jTable_Clientes.getValueAt(selectedRow, 0);
 
-                DClientes cliente = new DClientes(
+                Clientes cliente = new Clientes(
                         idCliente, nombreCompleto, tipoId, numeroDocumento,
                         genero, telefono, correoElectronico, direccion, ciudad
                 );
 
                 // ✅ Llamada correcta (método estático)
-                DClientes.actualizarClientes(cliente);
+                Clientes.actualizarClientes(cliente);
 
                 // ✅ Refrescar tabla
                 populateJtable("");
@@ -717,7 +717,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         // si se oprime el botón Imprimir
         if (jButton_imprimir.getText().equals("Imprimir")) {
             try {
-                InputStream datosReporte = Utilidad.inputStreamReporte("Cliente.jrxml");
+                InputStream datosReporte = Utilidad.inputStreamReporte("RClientes.jrxml");
                 Map<String, String> parametros = new HashMap<>();
                 parametros.put("RUsuarios", "Juan Felipe Triana ");
 
@@ -735,7 +735,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
                 this.jButton_imprimir.setIcon(new ImageIcon(this.getClass().getResource("/imagenes/atras.png")));
             } catch (Exception ex) {
                 ex.printStackTrace();
-                JOptionPane.showMessageDialog(this, "No se puede mostrar los Proveedores\n" + ex.getMessage());
+                JOptionPane.showMessageDialog(this, "No se puede mostrar los Clientes\n" + ex.getMessage());
             }
         } else if (jButton_imprimir.getText().equals("Volver")) {
             this.jScrollPane1.getViewport().removeAll();
@@ -750,19 +750,19 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField2_correoActionPerformed
 
-    public ArrayList<DClientes> getClienList() {
-        ArrayList<DClientes> clientList = new ArrayList<>();
+    public ArrayList<Clientes> getClienList() {
+        ArrayList<Clientes> clientList = new ArrayList<>();
         String query = "SELECT * FROM clientes";
 
-        try (Connection con = modelo.Conexion_DB.getConnection();
+        try (Connection con = modelo.ConexionDB.getConnection();
                 Statement st = con.createStatement();
                 ResultSet rs = st.executeQuery(query)) {
 
             while (rs.next()) {
-                DClientes cliente = new DClientes(
+                Clientes cliente = new Clientes(
                         rs.getInt("id"),
                         rs.getString("nombre_completo"),
-                        rs.getString("tipo_documento"),
+                        rs.getString("tipo_documento_cliente"),
                         rs.getString("numero_documento"),
                         rs.getString("genero"),
                         rs.getString("telefono"),

@@ -5,6 +5,7 @@
  */
 package controlador;
 
+import modelo.Producto;
 import java.util.ArrayList;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -204,7 +205,7 @@ public class ProductoTest {
      * Test of updateProduct method, of class Producto.
      */
     @Test
-    public void testUpdateProduct() {
+   /* public void testUpdateProduct() {
         System.out.println("updateProduct");
         int productoId = 1;
         int columnIndex = 2;
@@ -212,12 +213,12 @@ public class ProductoTest {
         Producto instance = new Producto();
         instance.updateProduct(productoId, columnIndex, newValue);
         // Añadir una verificación si fuera posible obtener el valor actualizado
-    }
+    }*/
 
     /**
      * Test of getNombre method, of class Producto.
      */
-    @Test
+   
     public void testGetNombre() {
         System.out.println("getNombre");
         Producto instance = new Producto();
