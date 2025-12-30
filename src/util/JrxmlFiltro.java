@@ -8,16 +8,13 @@ package util;
 import java.io.File;
 import javax.swing.filechooser.FileFilter;
 
+public class JrxmlFiltro extends FileFilter {
 
-public class JrxmlFiltro  extends FileFilter  {
-    
-    
-     final static String extencionReporte = "jrxml";
+    final static String extencionReporte = "jrxml";
 
     public JrxmlFiltro() {
         super();
     }
-
 
     // Accept all directories and all gif, jpg, or tiff files.
     public boolean accept(File archivoReporte) {
@@ -29,10 +26,10 @@ public class JrxmlFiltro  extends FileFilter  {
         String s = archivoReporte.getName();
         int i = s.lastIndexOf('.');
 
-        if (i > 0 &&  i < s.length() - 1) {
-            String extension = s.substring(i+1).toLowerCase();
-            if (extencionReporte.equals(extension) ) {
-                    return true;
+        if (i > 0 && i < s.length() - 1) {
+            String extension = s.substring(i + 1).toLowerCase();
+            if (extencionReporte.equals(extension)) {
+                return true;
             } else {
                 return false;
             }
@@ -45,7 +42,5 @@ public class JrxmlFiltro  extends FileFilter  {
     public String getDescription() {
         return "Fichero de Reportes JasperReport";
     }
-    
-    
-    
+
 }

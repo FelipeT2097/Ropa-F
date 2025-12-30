@@ -4,6 +4,7 @@
  */
 package vista;
 
+import controlador.Auditoria;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -19,6 +20,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 import javax.swing.table.JTableHeader;
 import modelo.TablaProducto;
+import modelo.Usuario_Sesion;
 import reportes.VistaReportes;
 import util.Utilidad;
 
@@ -122,7 +124,7 @@ public class Inventario extends javax.swing.JInternalFrame {
         jTable_productos.getColumnModel().getColumn(5).setPreferredWidth(150); // Color
         jTable_productos.getColumnModel().getColumn(6).setPreferredWidth(120); // Talla o Imagen
 
-       // modeloTabla.addMouseListenerToTable(jTable_productos, producto);
+        // modeloTabla.addMouseListenerToTable(jTable_productos, producto);
     }
 
     /**
@@ -331,7 +333,25 @@ public class Inventario extends javax.swing.JInternalFrame {
         try {
             Integer rowIndex = jTable_productos.getSelectedRow();
             Integer id = Integer.valueOf(jTable_productos.getValueAt(rowIndex, 0).toString());
-            modelo.Producto.eliminarProducto(id);
+            String codigo = jTable_productos.getValueAt(rowIndex, 1).toString();  
+            String nombre = jTable_productos.getValueAt(rowIndex, 2).toString();
+
+            modelo.Producto.eliminarProducto(codigo);
+
+            // REGISTRAR ELIMINACIÓN
+            try {
+                Auditoria auditoria = new Auditoria();
+
+                auditoria.registrar(
+                        Usuario_Sesion.getInstancia().getNombreUsuario(),
+                        "ELIMINAR",
+                        "Productos",
+                        "Eliminó producto: " + codigo + " - " + nombre
+                );
+            } catch (Exception e) {
+                System.err.println("Error: " + e.getMessage());
+            }
+
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(null, "Debe seleccionar un producto de la tabla", "No se ha seleccionado ningún producto", 2);
         }

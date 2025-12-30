@@ -62,7 +62,7 @@ public class GeneradorCUFE {
         try {
             // Formato DIAN obligatorio: yyyy-MM-dd'T'HH:mm:ss
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-            
+
             String fechaFormateada = sdf.format(fechaFactura);
 
             // Formato de valores monetarios: sin separadores, con 2 decimales
@@ -153,9 +153,7 @@ public class GeneradorCUFE {
         return bytesToHex(hashBytes);
     }
 
-    /**
-     * Convierte un array de bytes a su representación hexadecimal
-     */
+    //Convierte un array de bytes a su representación hexadecimal
     private static String bytesToHex(byte[] bytes) {
         StringBuilder hexString = new StringBuilder();
         for (byte b : bytes) {
@@ -168,12 +166,7 @@ public class GeneradorCUFE {
         return hexString.toString();
     }
 
-    /**
-     * Valida que un CUFE tenga el formato correcto
-     *
-     * @param cufe CUFE a validar
-     * @return true si el formato es válido
-     */
+    //Valida que un CUFE tenga el formato correcto
     public static boolean validarFormatoCUFE(String cufe) {
         if (cufe == null || cufe.isEmpty()) {
             return false;
@@ -188,9 +181,7 @@ public class GeneradorCUFE {
         return cufe.matches("[0-9a-fA-F]+");
     }
 
-    /**
-     * Genera un CUFE de ejemplo para pruebas
-     */
+    //Genera un CUFE de ejemplo para pruebas
     public static String generarCUFEEjemplo() {
         return generarCUFESimple(
                 "FV001-00123",
@@ -204,12 +195,8 @@ public class GeneradorCUFE {
         );
     }
 
-    // ============================================================================
     // MÉTODOS DE UTILIDAD ADICIONALES
-    // ============================================================================
-    /**
-     * Extrae el número de factura limpio (sin prefijo ni caracteres especiales)
-     */
+    //Extrae el número de factura limpio (sin prefijo ni caracteres especiales)
     public static String limpiarNumeroFactura(String numeroFactura) {
         if (numeroFactura == null) {
             return "";
@@ -218,10 +205,7 @@ public class GeneradorCUFE {
         return numeroFactura.replaceAll("[^0-9]", "");
     }
 
-    /**
-     * Calcula el dígito de verificación del NIT Útil para validaciones
-     * adicionales
-     */
+    // Calcula el dígito de verificación del NIT Útil para validaciones adicionales
     public static int calcularDigitoVerificacion(String nit) {
         int[] primos = {71, 67, 59, 53, 47, 43, 41, 37, 29, 23, 19, 17, 13, 7, 3};
         int suma = 0;
@@ -241,9 +225,7 @@ public class GeneradorCUFE {
         }
     }
 
-    /**
-     * Formatea un NIT con su dígito de verificación
-     */
+    // Formatea un NIT con su dígito de verificación
     public static String formatearNIT(String nit) {
         if (nit == null || nit.isEmpty()) {
             return "";
@@ -255,18 +237,14 @@ public class GeneradorCUFE {
         return nitLimpio + "-" + dv;
     }
 
-    // ============================================================================
     // CLASE DE EJEMPLO DE USO
-    // ============================================================================
-    /**
-     * Ejemplo de uso del generador de CUFE
-     */
+    // Ejemplo de uso del generador de CUFE
     public static void main(String[] args) {
         System.out.println("=================================================");
         System.out.println("   GENERADOR DE CUFE - FACTURACIÓN ELECTRÓNICA");
         System.out.println("=================================================\n");
 
-        // Ejemplo 1: CUFE Simple
+        //CUFE Simple
         System.out.println("EJEMPLO 1: CUFE Simple (solo IVA)");
         System.out.println("---------------------------------");
 
@@ -286,7 +264,7 @@ public class GeneradorCUFE {
         System.out.println("Válido: " + validarFormatoCUFE(cufeSimple));
         System.out.println();
 
-        // Ejemplo 2: CUFE Completo con múltiples impuestos
+        //CUFE Completo con múltiples impuestos
         System.out.println("EJEMPLO 2: CUFE Completo (IVA + INC)");
         System.out.println("-------------------------------------");
 
@@ -313,7 +291,7 @@ public class GeneradorCUFE {
         System.out.println("Válido: " + validarFormatoCUFE(cufeCompleto));
         System.out.println();
 
-        // Ejemplo 3: Utilidades
+        //Utilidades
         System.out.println("EJEMPLO 3: Utilidades");
         System.out.println("---------------------");
 
@@ -328,7 +306,7 @@ public class GeneradorCUFE {
         System.out.println("Número Limpio: " + limpiarNumeroFactura(numeroFacturaConPrefijo));
         System.out.println();
 
-        // Ejemplo 4: Validación
+        //Validación
         System.out.println("EJEMPLO 4: Validación de CUFE");
         System.out.println("------------------------------");
 

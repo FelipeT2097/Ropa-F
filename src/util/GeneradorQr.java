@@ -244,9 +244,7 @@ public class GeneradorQr {
         return URL_BASE_DIAN + cufe;
     }
 
-    // ============================================================================
     // MÉTODOS PARA INTEGRACIÓN CON JASPERREPORTS
-    // ============================================================================
     /**
      * Genera QR optimizado para JasperReports Tamaño y formato adecuados para
      * incluir en reportes PDF
@@ -273,12 +271,8 @@ public class GeneradorQr {
         return generarQRParaJasper(cufe);
     }
 
-    // ============================================================================
     // CLASE DE EJEMPLO DE USO
-    // ============================================================================
-    /**
-     * Ejemplo de uso del generador de códigos QR
-     */
+    // Ejemplo de uso del generador de códigos QR
     public static void main(String[] args) {
         System.out.println("=================================================");
         System.out.println("     GENERADOR DE CÓDIGOS QR - DIAN COLOMBIA");
@@ -303,7 +297,7 @@ public class GeneradorQr {
                 return;
             }
 
-            // Ejemplo 1: Generar QR básico
+            //Generar QR básico
             System.out.println("EJEMPLO 1: Generando QR básico...");
             BufferedImage qrBasico = generarCodigoQR(cufe);
             String rutaQRBasico = "qr_basico.png";
@@ -312,14 +306,14 @@ public class GeneradorQr {
             System.out.println("  Tamaño: " + qrBasico.getWidth() + "x" + qrBasico.getHeight() + " píxeles");
             System.out.println();
 
-            // Ejemplo 2: Generar QR con tamaño personalizado
+            //Generar QR con tamaño personalizado
             System.out.println("EJEMPLO 2: Generando QR grande (500x500)...");
             String rutaQRGrande = "qr_grande.png";
             generarYGuardarQR(cufe, rutaQRGrande, TAMANIO_GRANDE);
             System.out.println("✓ QR grande guardado en: " + rutaQRGrande);
             System.out.println();
 
-            // Ejemplo 3: Generar QR con colores personalizados
+            //Generar QR con colores personalizados
             System.out.println("EJEMPLO 3: Generando QR con colores...");
             BufferedImage qrColores = generarCodigoQRConColores(
                     cufe,
@@ -332,21 +326,21 @@ public class GeneradorQr {
             System.out.println("✓ QR con colores guardado en: " + rutaQRColores);
             System.out.println();
 
-            // Ejemplo 4: Convertir a bytes (para BD)
+            //Convertir a bytes (para BD)
             System.out.println("EJEMPLO 4: Convirtiendo QR a bytes...");
             byte[] qrBytes = imagenABytes(qrBasico, "PNG");
             System.out.println("✓ QR convertido a " + qrBytes.length + " bytes");
             System.out.println("  (Listo para guardar en base de datos)");
             System.out.println();
 
-            // Ejemplo 5: URL de validación
+            //URL de validación
             System.out.println("EJEMPLO 5: URL de validación DIAN");
             String urlValidacion = generarURLValidacion(cufe);
             System.out.println("URL generada:");
             System.out.println(urlValidacion);
             System.out.println();
 
-            // Ejemplo 6: Para JasperReports
+            //Para JasperReports
             System.out.println("EJEMPLO 6: QR para JasperReports");
             System.out.println("Código para usar en tu reporte:");
             System.out.println("──────────────────────────────────────────");
@@ -364,8 +358,8 @@ public class GeneradorQr {
             System.out.println();
 
             System.out.println("=================================================");
-            System.out.println("  ✓ Todos los ejemplos ejecutados exitosamente");
-            System.out.println("  ✓ Revisa los archivos PNG generados");
+            System.out.println("Todos los ejemplos ejecutados exitosamente");
+            System.out.println("Revisa los archivos PNG generados");
             System.out.println("=================================================");
 
         } catch (Exception e) {

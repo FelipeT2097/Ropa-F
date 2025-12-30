@@ -7,17 +7,14 @@ package util;
 
 import java.io.InputStream;
 
-
 /**
  *
  * @author piper
  */
 public class Utilidad {
-    
-     public static  InputStream inputStreamReporte(String nombreFichero){
-        return Utilidad.class.getResourceAsStream("/reportes/"+nombreFichero);
-    }
-    
-    
-}
 
+    public static InputStream inputStreamReporte(String nombreFichero) {
+        return Utilidad.class.getResourceAsStream("/reportes/" + nombreFichero);
+    }
+
+}

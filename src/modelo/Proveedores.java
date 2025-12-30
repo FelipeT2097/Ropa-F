@@ -29,7 +29,6 @@ public class Proveedores {
     private String genero;
     private String telefono;
     private String correoElectronico;
-    // private String user_type;
 
     public Proveedores() {
 
@@ -110,9 +109,9 @@ public class Proveedores {
         try {
             con = ConexionDB.getConnection();
             ps = con.prepareStatement(
-                "INSERT INTO `proveedores`(`nombre_proveedor`,`tipo_documento`, " +
-                "`numero_documento`, `genero`, `telefono`,`correo_electronico`) " +
-                "VALUES (?,?,?,?,?,?)"
+                    "INSERT INTO `proveedores`(`nombre_proveedor`,`tipo_documento`, "
+                    + "`numero_documento`, `genero`, `telefono`,`correo_electronico`) "
+                    + "VALUES (?,?,?,?,?,?)"
             );
 
             ps.setString(1, proveedores.getNombreProveedor());
@@ -129,14 +128,18 @@ public class Proveedores {
             }
 
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, 
-                "Error al insertar el proveedor: " + ex.getMessage(), 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null,
+                    "Error al insertar el proveedor: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
             Logger.getLogger(Proveedores.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             try {
-                if (ps != null) ps.close();
-                if (con != null) con.close();
+                if (ps != null) {
+                    ps.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -149,24 +152,24 @@ public class Proveedores {
         PreparedStatement ps = null;
         ResultSet rs = null;
 
-        String query = "SELECT `id`, `nombre_proveedor`,`tipo_documento`," +
-                      "`numero_documento`, `genero`, `telefono`, `correo_electronico` " +
-                      "FROM `proveedores`";
+        String query = "SELECT `id`, `nombre_proveedor`,`tipo_documento`,"
+                + "`numero_documento`, `genero`, `telefono`, `correo_electronico` "
+                + "FROM `proveedores`";
 
         try {
             cn = ConexionDB.getConnection();
             ps = cn.prepareStatement(query);
             rs = ps.executeQuery();
-            
+
             while (rs.next()) {
                 Proveedores proveedores = new Proveedores(
-                    rs.getInt("id"),
-                    rs.getString("nombre_proveedor"),
-                    rs.getString("tipo_documento"),
-                    rs.getString("numero_documento"),
-                    rs.getString("genero"),
-                    rs.getString("telefono"),
-                    rs.getString("correo_electronico")
+                        rs.getInt("id"),
+                        rs.getString("nombre_proveedor"),
+                        rs.getString("tipo_documento"),
+                        rs.getString("numero_documento"),
+                        rs.getString("genero"),
+                        rs.getString("telefono"),
+                        rs.getString("correo_electronico")
                 );
                 prove_List.add(proveedores);
             }
@@ -175,9 +178,15 @@ public class Proveedores {
             Logger.getLogger(Proveedores.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             try {
-                if (rs != null) rs.close();
-                if (ps != null) ps.close();
-                if (cn != null) cn.close();
+                if (rs != null) {
+                    rs.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+                if (cn != null) {
+                    cn.close();
+                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -192,9 +201,9 @@ public class Proveedores {
         try {
             con = ConexionDB.getConnection();
             ps = con.prepareStatement(
-                "UPDATE `proveedores` SET `nombre_proveedor`=?, `tipo_documento`=?, " +
-                "`numero_documento`=?, `genero`=?, `telefono`=?, `correo_electronico`=? " +
-                "WHERE `id` = ?"
+                    "UPDATE `proveedores` SET `nombre_proveedor`=?, `tipo_documento`=?, "
+                    + "`numero_documento`=?, `genero`=?, `telefono`=?, `correo_electronico`=? "
+                    + "WHERE `id` = ?"
             );
 
             ps.setString(1, proveedores.getNombreProveedor());
@@ -208,15 +217,19 @@ public class Proveedores {
             if (ps.executeUpdate() != 0) {
                 JOptionPane.showMessageDialog(null, "Proveedor Actualizado");
             } else {
-                JOptionPane.showMessageDialog(null, 
-                    "Algo salió mal, no se pudo actualizar el proveedor.");
+                JOptionPane.showMessageDialog(null,
+                        "Algo salió mal, no se pudo actualizar el proveedor.");
             }
         } catch (SQLException ex) {
             Logger.getLogger(Proveedores.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             try {
-                if (ps != null) ps.close();
-                if (con != null) con.close();
+                if (ps != null) {
+                    ps.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -232,10 +245,10 @@ public class Proveedores {
             ps = con.prepareStatement("DELETE FROM `proveedores` WHERE `id` = ?");
             ps.setInt(1, id);
 
-            int YesOrNo = JOptionPane.showConfirmDialog(null, 
-                "Realmente desea eliminar este proveedor", 
-                "Eliminar usuarios", JOptionPane.YES_NO_OPTION);
-                
+            int YesOrNo = JOptionPane.showConfirmDialog(null,
+                    "Realmente desea eliminar este proveedor",
+                    "Eliminar usuarios", JOptionPane.YES_NO_OPTION);
+
             if (YesOrNo == 0) {
                 if (ps.executeUpdate() != 0) {
                     JOptionPane.showMessageDialog(null, "Proveedor Eliminado");
@@ -248,8 +261,12 @@ public class Proveedores {
             Logger.getLogger(Proveedores.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             try {
-                if (ps != null) ps.close();
-                if (con != null) con.close();
+                if (ps != null) {
+                    ps.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
             } catch (SQLException e) {
                 e.printStackTrace();
             }

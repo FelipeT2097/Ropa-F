@@ -198,15 +198,15 @@
                       </Group>
                   </Group>
                   <Group type="103" groupAlignment="3" attributes="0">
-                      <Component id="jButton_insertar" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jButton1_actualizar" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jButton_insertar" alignment="3" min="-2" pref="31" max="-2" attributes="0"/>
+                      <Component id="jButton1_actualizar" alignment="3" min="-2" pref="31" max="-2" attributes="0"/>
                       <Component id="jButton_eliminar" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="jButton_first" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jButton_siguiente" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jButton4" alignment="3" min="-2" max="-2" attributes="0"/>
-                      <Component id="jButton5" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="jButton_siguiente" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
+                      <Component id="jButton4" alignment="3" min="-2" pref="30" max="-2" attributes="0"/>
+                      <Component id="jButton5" alignment="3" min="-2" pref="31" max="-2" attributes="0"/>
                   </Group>
-                  <EmptySpace pref="76" max="32767" attributes="0"/>
+                  <EmptySpace pref="75" max="32767" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>

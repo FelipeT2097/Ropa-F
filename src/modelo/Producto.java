@@ -45,7 +45,7 @@ public class Producto {
         this.color = color;
         this.genero = genero;
     }
-    
+
     public Integer getId() {
         return id;
     }
@@ -146,7 +146,7 @@ public class Producto {
     }
 
     // actualiza producto
-   public static void actualizarProducto(Producto producto) {
+    public static void actualizarProducto(Producto producto) {
         Connection con = ConexionDB.getConnection();
         PreparedStatement ps;
 
@@ -162,7 +162,7 @@ public class Producto {
             ps.setString(7, producto.getCodigo());
 
             if (ps.executeUpdate() != 0) {
-            //   JOptionPane.showMessageDialog(null, "Producto Actualizado");
+                //   JOptionPane.showMessageDialog(null, "Producto Actualizado");
             } else {
                 JOptionPane.showMessageDialog(null, "Algo Salio Mal");
 
@@ -175,14 +175,14 @@ public class Producto {
     }
 
     // Eliminar producto por id
-    public static void eliminarProducto(Integer codigo) {
+    public static void eliminarProducto(String codigo) {
         Connection con = ConexionDB.getConnection();
         PreparedStatement ps;
 
         try {
             ps = con.prepareStatement("DELETE FROM `productos` WHERE `codigo` = ?");
 
-            ps.setInt(1, codigo);
+            ps.setString(1, codigo);
 
             // mostrar un mensaje de confirmación antes de eliminar el producto
             int YesOrNo = JOptionPane.showConfirmDialog(null, "¿Desea realmente eliminar este producto?", "Producto Eliminado", JOptionPane.YES_NO_OPTION);
@@ -211,7 +211,6 @@ public class Producto {
         ResultSet rs;
         PreparedStatement ps;
 
-       
         String query = "SELECT `id`, `codigo`, `nombre`, `precio`, `cantidad`, `talla`, `color`, `genero` "
                 + "FROM `productos` "
                 + "WHERE CONCAT(`codigo`, `nombre`, `precio`, `cantidad`, `talla`, `color`, `genero`) LIKE ?";

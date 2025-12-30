@@ -4,6 +4,7 @@
  */
 package vista;
 
+import controlador.Auditoria;
 import modelo.Clientes;
 import modelo.Proveedores;
 import java.awt.Color;
@@ -25,6 +26,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
+import modelo.Usuario_Sesion;
 import reportes.VistaReportes;
 import util.Utilidad;
 
@@ -54,6 +56,19 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
 
         JTableHeader th = jTable_Clientes.getTableHeader();
         th.setFont(new Font("Tahoma", Font.PLAIN, 16));
+
+        // REGISTRAR ACCESO AL MÓDULO
+        try {
+            Auditoria auditoria = new Auditoria();
+            auditoria.registrarConsulta(
+                    Usuario_Sesion.getInstancia().getNombreUsuario(),
+                    "Clientes",
+                    "Accedió al módulo de Clientes"
+            );
+            System.out.println("Acceso a ConsultaClientes registrado");
+        } catch (Exception e) {
+            System.err.println("Error al registrar acceso: " + e.getMessage());
+        }
     }
 
     private void limpiarCampos() {
@@ -149,9 +164,11 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         String doc = jTextField1_numero_documento.getText();
         String telefono = jTextField_telefono.getText();
         String email = jTextField2_correo.getText();
+        String direccion = jTextField3_direccion.getText();
+        String ciudad = jTextField4_ciudad.getText();
 
         // Verificar si hay campos vacíos
-        if (name.trim().equals("") || doc.trim().equals("") || telefono.trim().equals("") || email.trim().equals("")) {
+        if (name.trim().equals("") || doc.trim().equals("") || telefono.trim().equals("") || email.trim().equals("") || direccion.trim().equals("") || ciudad.trim().equals("")) {
             JOptionPane.showMessageDialog(null, "Uno o mas campos estan vacios", "Campos vacios", 2);
             return false;
         } else {
@@ -569,18 +586,49 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
 
     private void jButton_eliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_eliminarActionPerformed
         // TODO add your handling code here:
+        try {
+            int filaSeleccionada = this.jTable_Clientes.getSelectedRow();
 
-        int filaSeleccionada = this.jTable_Clientes.getSelectedRow();
+            if (filaSeleccionada == -1) {
+                JOptionPane.showMessageDialog(null, "⚠️ Debe seleccionar un cliente de la tabla");
+                return;
+            }
 
-        if (filaSeleccionada == -1) {
-            JOptionPane.showMessageDialog(null, "⚠️ Debe seleccionar un cliente de la tabla");
-            return;
+            //OBTENER DATOS ANTES DE ELIMINAR
+            int idClienteEliminar = Integer.parseInt(
+                    this.jTable_Clientes.getValueAt(filaSeleccionada, 0).toString()
+            );
+            String numeroDocumento = this.jTable_Clientes.getValueAt(filaSeleccionada, 3).toString();
+            String nombreCompleto = this.jTable_Clientes.getValueAt(filaSeleccionada, 1).toString();
+
+            System.out.println("?Eliminando cliente: " + numeroDocumento + " - " + nombreCompleto);
+
+            // Eliminar
+            Clientes.eliminarCliente(idClienteEliminar);
+
+            // ⭐ REGISTRAR EN AUDITORÍA
+            try {
+                Auditoria auditoria = new Auditoria();
+                auditoria.registrar(
+                        Usuario_Sesion.getInstancia().getNombreUsuario(),
+                        "ELIMINAR",
+                        "Clientes",
+                        "Eliminó cliente: " + numeroDocumento + " - " + nombreCompleto
+                );
+                System.out.println("Eliminación de cliente registrada");
+            } catch (Exception e) {
+                System.err.println("Error al registrar: " + e.getMessage());
+            }
+
+            // Recargar y limpiar
+            this.cargarTablaClientes();
+            this.limpiarCampos();
+
+        } catch (Exception ex) {
+            System.err.println("Error: " + ex.getMessage());
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error al eliminar: " + ex.getMessage());
         }
-        int idClienteEliminar = Integer.parseInt(this.jTable_Clientes.getValueAt(filaSeleccionada, 0).toString());
-        Clientes.eliminarCliente(idClienteEliminar);
-        this.cargarTablaClientes();
-
-        this.limpiarCampos();
     }//GEN-LAST:event_jButton_eliminarActionPerformed
 
     private void jButton_firstActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_firstActionPerformed
@@ -630,6 +678,8 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         clientes.setNumeroDocumento(jTextField1_numero_documento.getText());
         clientes.setTipoDocumento((String) jComboBox1_tipo_d.getSelectedItem());
         clientes.setTelefono(jTextField_telefono.getText());
+        clientes.setDireccion(jTextField3_direccion.getText());
+        clientes.setCiudad(jTextField4_ciudad.getText());
         // Obtener el género seleccionado de los botones de radio
         String genero = "";
         if (jRadioButton_masculino.isSelected()) {
@@ -644,6 +694,23 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
 
         // Llamar al método para insertar el usuario
         modelo.Clientes.insertarClientes(clientes);
+
+        // registra cuando inserta un cliente en audtoria
+        try {
+            Auditoria auditoria = new Auditoria();
+            auditoria.registrar(
+                    Usuario_Sesion.getInstancia().getNombreUsuario(),
+                    "CREAR",
+                    "Clientes",
+                    "Creó cliente: " + clientes.getNumeroDocumento() + " - " + clientes.getNombreCompleto()
+            );
+            System.out.println("Creación de cliente registrada");
+
+        } catch (Exception e) {
+            System.err.println("Error al registrar: " + e.getMessage());
+        }
+        cargarTablaClientes();
+        limpiarCampos();
     }//GEN-LAST:event_jButton_insertarActionPerformed
 
     private void jButton1_actualizarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1_actualizarActionPerformed
@@ -681,10 +748,22 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
                         genero, telefono, correoElectronico, direccion, ciudad
                 );
 
-                // ✅ Llamada correcta (método estático)
+                //Llamada correcta (método estático)
                 Clientes.actualizarClientes(cliente);
 
-                // ✅ Refrescar tabla
+                // registra cuando inserta un cliente en audtoria
+                try {
+                    Auditoria auditoria = new Auditoria();
+                    auditoria.registrarModificacion(
+                            Usuario_Sesion.getInstancia().getNombreUsuario(),
+                            "Clientes",
+                            "Actualizó cliente: " + numeroDocumento + " - " + nombreCompleto
+                    );
+                    System.out.println("Actualización de cliente registrada");
+                } catch (Exception e) {
+                    System.err.println("Error al registrar: " + e.getMessage());
+                }
+                //Refrescar tabla
                 populateJtable("");
 
             } catch (Exception e) {

@@ -30,17 +30,6 @@ public class Principal extends javax.swing.JFrame {
         timer.start();
         configurarPermisosPorRol();
 
-        /*  ImageIcon icFacturas = new ImageIcon(getClass().getResource("/imagenes/Factura.png"));
-        Icon iconoFac = new ImageIcon(icFacturas.getImage().getScaledInstance(50,55, Image.SCALE_DEFAULT));
-        jButton_factura.setIcon(iconoFac);
-        
-        ImageIcon icRecibos = new ImageIcon(getClass().getResource("/imagenes/Recibos.png"));
-        Icon iconoRec = new ImageIcon(icRecibos.getImage().getScaledInstance(50,55, Image.SCALE_DEFAULT));
-        jButton_recibos.setIcon(iconoRec);
-        
-        ImageIcon icAlmacen = new ImageIcon(getClass().getResource("/imagenes/Almacen.png"));
-        Icon iconoAlm = new ImageIcon(icAlmacen.getImage().getScaledInstance(50,55, Image.SCALE_DEFAULT));
-        jButton_almacen.setIcon(iconoAlm); */
         ImageIcon mGestionUsuarios = new ImageIcon(getClass().getResource("/imagenes/GUsuarios.png"));
         Icon iconoGesUsuarios = new ImageIcon(mGestionUsuarios.getImage().getScaledInstance(20, 15, Image.SCALE_DEFAULT));
         jMenu_GUSUARIOS.setIcon(iconoGesUsuarios);
@@ -65,6 +54,18 @@ public class Principal extends javax.swing.JFrame {
         Icon iconoReversiones = new ImageIcon(mReversiones.getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
         jMenu_reversiones.setIcon(iconoReversiones);
 
+        ImageIcon mReportes = new ImageIcon(getClass().getResource("/imagenes/reportes.png"));
+        Icon iconoReportes = new ImageIcon(mReportes.getImage().getScaledInstance(20, 20, Image.SCALE_DEFAULT));
+        jMenu_reportes.setIcon(iconoReportes);
+
+        ImageIcon iReport = new ImageIcon(getClass().getResource("/imagenes/reportes.png"));
+        Icon iconoReport = new ImageIcon(iReport.getImage().getScaledInstance(20, 15, Image.SCALE_DEFAULT));
+        jMenuItem_reportes.setIcon(iconoReport);
+
+        ImageIcon mAuditoria = new ImageIcon(getClass().getResource("/imagenes/auditoria.png"));
+        Icon iconoAuditoria = new ImageIcon(mAuditoria.getImage().getScaledInstance(20, 15, Image.SCALE_DEFAULT));
+        jMenuItem_auditoria.setIcon(iconoAuditoria);
+
         timer.start();
 
         // Configurar permisos según el rol
@@ -74,9 +75,7 @@ public class Principal extends javax.swing.JFrame {
         mostrarInfoUsuario();
     }
 
-    /**
-     * Crea un panel con info del usuario en la barra de menú
-     */
+    //Crea un panel con info del usuario en la barra de menú
     private void crearPanelUsuarioEnBarra() {
         modelo.Usuario_Sesion sesion = modelo.Usuario_Sesion.getInstancia();
 
@@ -88,7 +87,7 @@ public class Principal extends javax.swing.JFrame {
         // Crear label
         javax.swing.JLabel lblUsuario = new javax.swing.JLabel();
 
-         // Cargar icono (ajusta la ruta según tu proyecto)
+        // Cargar icono (ajusta la ruta según tu proyecto)
         ImageIcon iconoUsuario = new ImageIcon(getClass().getResource("/imagenes/admin.png"));
 
         // Redimensionar la imagen a un tamaño adecuado (opcional)
@@ -107,7 +106,7 @@ public class Principal extends javax.swing.JFrame {
 
         // Esto hace que imagen y texto no se peguen
         lblUsuario.setIconTextGap(8);
-        
+
         // Botón de cerrar sesión
         javax.swing.JButton btnCerrarSesion = new javax.swing.JButton("Cerrar Sesión");
         btnCerrarSesion.setFont(new java.awt.Font("Lucida Sans", java.awt.Font.PLAIN, 11));
@@ -130,9 +129,7 @@ public class Principal extends javax.swing.JFrame {
         jMenuBar1.add(panelUsuario);
     }
 
-    /**
-     * Cerrar sesión del usuario
-     */
+    //Cerrar sesión del usuario
     private void cerrarSesion() {
         int respuesta = JOptionPane.showConfirmDialog(
                 this,
@@ -150,9 +147,7 @@ public class Principal extends javax.swing.JFrame {
         }
     }
 
-    /**
-     * Configura qué menús puede ver cada rol
-     */
+    // Configura qué menús puede ver cada rol
     private void configurarPermisosPorRol() {
         modelo.Usuario_Sesion sesion = modelo.Usuario_Sesion.getInstancia();
 
@@ -172,6 +167,9 @@ public class Principal extends javax.swing.JFrame {
             // Los vendedores NO pueden realizar reversiones
             jMenu_reversiones.setVisible(false);
 
+            // Los vendedor NO pueden ver el modulo de auditoria
+            jMenuItem_auditoria.setVisible(false);
+
         } else if (sesion.esAlmacenista()) {
             // Los almacenistas NO pueden gestionar usuarios
             jMenu_GUSUARIOS.setVisible(false);
@@ -188,6 +186,9 @@ public class Principal extends javax.swing.JFrame {
             // Los almacenista NO pueden realizar reversiones
             jMenu_reversiones.setVisible(false);
 
+            // Los almacenista NO pueden ver el modulo de auditoria
+            jMenuItem_auditoria.setVisible(false);
+
         } else if (sesion.esAdmin()) {
             // Los administradores ven TODO
             jMenu_GUSUARIOS.setVisible(true);
@@ -198,9 +199,7 @@ public class Principal extends javax.swing.JFrame {
         }
     }
 
-    /**
-     * Muestra info del usuario logueado
-     */
+    // Muestra info del usuario logueado
     private void mostrarInfoUsuario() {
         modelo.Usuario_Sesion sesion = modelo.Usuario_Sesion.getInstancia();
 
@@ -257,6 +256,9 @@ public class Principal extends javax.swing.JFrame {
         jMenuItem3 = new javax.swing.JMenuItem();
         jMenu_reversiones = new javax.swing.JMenu();
         jMenuitem4 = new javax.swing.JMenuItem();
+        jMenu_reportes = new javax.swing.JMenu();
+        jMenuItem_reportes = new javax.swing.JMenuItem();
+        jMenuItem_auditoria = new javax.swing.JMenuItem();
 
         jMenu1.setText("jMenu1");
 
@@ -412,6 +414,26 @@ public class Principal extends javax.swing.JFrame {
 
         jMenuBar1.add(jMenu_reversiones);
 
+        jMenu_reportes.setText("Reportes");
+
+        jMenuItem_reportes.setText("Impresion Reportes");
+        jMenuItem_reportes.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem_reportesActionPerformed(evt);
+            }
+        });
+        jMenu_reportes.add(jMenuItem_reportes);
+
+        jMenuItem_auditoria.setText("Auditoria");
+        jMenuItem_auditoria.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem_auditoriaActionPerformed(evt);
+            }
+        });
+        jMenu_reportes.add(jMenuItem_auditoria);
+
+        jMenuBar1.add(jMenu_reportes);
+
         setJMenuBar(jMenuBar1);
 
         pack();
@@ -458,6 +480,20 @@ public class Principal extends javax.swing.JFrame {
         jDesktopPane_escritorio.add(reversiones);
         reversiones.show();
     }//GEN-LAST:event_jMenuitem4ActionPerformed
+
+    private void jMenuItem_reportesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem_reportesActionPerformed
+        // TODO add your handling code here:
+        FrmReportes reportes = new FrmReportes();
+        jDesktopPane_escritorio.add(reportes);
+        reportes.show();
+    }//GEN-LAST:event_jMenuItem_reportesActionPerformed
+
+    private void jMenuItem_auditoriaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem_auditoriaActionPerformed
+        // TODO add your handling code here:
+        FrmAuditoria auditoria = new FrmAuditoria();
+        jDesktopPane_escritorio.add(auditoria);
+        auditoria.show();
+    }//GEN-LAST:event_jMenuItem_auditoriaActionPerformed
 
     /**
      * @param args the command line arguments
@@ -509,12 +545,15 @@ public class Principal extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem_Usuarios;
+    private javax.swing.JMenuItem jMenuItem_auditoria;
+    private javax.swing.JMenuItem jMenuItem_reportes;
     private javax.swing.JMenuItem jMenuItem_stock;
     private javax.swing.JMenu jMenu_CATALOGO;
     private javax.swing.JMenu jMenu_GUSUARIOS;
     private javax.swing.JMenu jMenu_gestion_clientes;
     private javax.swing.JMenu jMenu_gestion_proveedores;
     private javax.swing.JMenu jMenu_punto_venta;
+    private javax.swing.JMenu jMenu_reportes;
     private javax.swing.JMenu jMenu_reversiones;
     private javax.swing.JMenuItem jMenuitem4;
     private javax.swing.JPanel jPanel1;

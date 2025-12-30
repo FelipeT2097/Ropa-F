@@ -4,9 +4,10 @@
  */
 package vista;
 
+import controlador.Auditoria;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
-
+import modelo.Usuario_Sesion;
 
 /**
  *
@@ -21,7 +22,17 @@ public class FrmActualizarProductos extends javax.swing.JFrame {
 
     public FrmActualizarProductos() {
         initComponents();
-
+        //REGISTRAR ACCESO AL MÓDULO 
+        try {
+            Auditoria auditoria = new Auditoria();
+            auditoria.registrarConsulta(
+                    Usuario_Sesion.getInstancia().getNombreUsuario(),
+                    "Productos",
+                    "Accedió al módulo de Actualizar Productos"
+            );
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        }
         jTextField_id.setEnabled(false);
     }
 
@@ -305,6 +316,16 @@ public class FrmActualizarProductos extends javax.swing.JFrame {
                 // ACTUALIZAR el producto (no insertar)
                 modelo.Producto.actualizarProducto(producto);
 
+                try {
+                    Auditoria auditoria = new Auditoria();
+                    auditoria.registrarModificacion(
+                            Usuario_Sesion.getInstancia().getNombreUsuario(),
+                            "Productos",
+                            "Actualizó producto " + codigo + " - " + nombre
+                    );
+                } catch (Exception e) {
+                    System.err.println("Error: " + e.getMessage());
+                }
                 JOptionPane.showMessageDialog(this, "Producto actualizado correctamente");
                 this.dispose();
 

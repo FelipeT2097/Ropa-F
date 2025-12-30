@@ -31,13 +31,14 @@ public class Usuarios {
     private String telefono;
     private String correoElectronico;
     private String contraseña;
+    private String rol;
 
     public Usuarios() {
     }
 
     public Usuarios(Integer id, String nombreCompleto, String nombreUsuario, 
                   String tipoDocumento, String numeroDocumento, String genero, 
-                  String telefono, String correoElectronico, String contraseña) {
+                  String telefono, String correoElectronico, String contraseña, String rol) {
         this.id = id;
         this.nombreCompleto = nombreCompleto;
         this.nombreUsuario = nombreUsuario;
@@ -47,6 +48,7 @@ public class Usuarios {
         this.telefono = telefono;
         this.correoElectronico = correoElectronico;
         this.contraseña = contraseña;
+        this.rol = rol;
     }
 
     
@@ -121,6 +123,14 @@ public class Usuarios {
     public void setContraseña(String contraseña) {
         this.contraseña = contraseña;
     }
+    
+    public String getRol() {
+        return rol;
+    }
+
+    public void setRol(String rol) {
+        this.rol = rol;
+    }
 
      public static void insertUser(Usuarios usuarios) {
         Connection con = null;
@@ -131,7 +141,7 @@ public class Usuarios {
             ps = con.prepareStatement(
                 "INSERT INTO `usuarios`(`nombre_completo`, `nombre_usuario`, " +
                 "`tipo_documento`, `numero_documento`, `genero`, `telefono`, " +
-                "`correo_electronico`, `contraseña`) VALUES (?,?,?,?,?,?,?,?)"
+                "`correo_electronico`, `contraseña`, `rol`) VALUES (?,?,?,?,?,?,?,?,?)"
             );
 
             ps.setString(1, usuarios.getNombreCompleto());
@@ -142,6 +152,7 @@ public class Usuarios {
             ps.setString(6, usuarios.getTelefono());
             ps.setString(7, usuarios.getCorreoElectronico());
             ps.setString(8, usuarios.getContraseña());
+            ps.setString(9, usuarios.getRol());
 
             // DEBUG
             System.out.println("Insertando usuario en BD...");
@@ -177,7 +188,7 @@ public class Usuarios {
 
                String query = "SELECT `id`, `nombre_completo`, `nombre_usuario`, " +
                       "`tipo_documento`, `numero_documento`, `genero`, `telefono`, " +
-                      "`correo_electronico`, `contraseña` FROM `usuarios`";
+                      "`correo_electronico`, `contraseña`, `rol` FROM `usuarios`";
 
         try {
             cn = ConexionDB.getConnection();
@@ -194,7 +205,8 @@ public class Usuarios {
                     rs.getString("genero"),
                     rs.getString("telefono"),
                     rs.getString("correo_electronico"),
-                    rs.getString("contraseña")
+                    rs.getString("contraseña"),
+                    rs.getString("rol")
                 );
                 user_list.add(usuarios);
             }
@@ -224,8 +236,8 @@ public class Usuarios {
             
             // Definir los títulos de las columnas de la tabla
             String titulos[] = {"id", "Nombre", "Usuario", "TipoId", "Documento", 
-                               "Genero", "Telefono", "Correo", "Contraseña"};
-            String dts[] = new String[9];  // CORREGIDO: eran 8, necesitas 9
+                               "Genero", "Telefono", "Correo", "Contraseña", "Rol"};
+            String dts[] = new String[10];  
             miModelo = new DefaultTableModel(null, titulos);
             
             // Llamada al procedimiento almacenado
@@ -244,6 +256,7 @@ public class Usuarios {
                 dts[6] = rs.getString("Telefono");
                 dts[7] = rs.getString("Correo");
                 dts[8] = rs.getString("Contraseña");
+                dts[9] = rs.getString("rol");
 
                 miModelo.addRow(dts);
             }
@@ -270,7 +283,7 @@ public class Usuarios {
             ps = con.prepareStatement(
                 "UPDATE `usuarios` SET `nombre_completo`=?, `nombre_usuario`=?, " +
                 "`tipo_documento`=?, `numero_documento`=?, `genero`=?, `telefono`=?, " +
-                "`correo_electronico`=?, `contraseña`=? WHERE `id` = ?"
+                "`correo_electronico`=?, `contraseña`=?, `rol`=? WHERE `id` = ?"
             );
 
             ps.setString(1, misUsuarios.getNombreCompleto());
@@ -281,7 +294,8 @@ public class Usuarios {
             ps.setString(6, misUsuarios.getTelefono());
             ps.setString(7, misUsuarios.getCorreoElectronico());
             ps.setString(8, misUsuarios.getContraseña());
-            ps.setInt(9, misUsuarios.getId());
+            ps.setString(9, misUsuarios.getRol());
+            ps.setInt(10, misUsuarios.getId());
 
             if (ps.executeUpdate() != 0) {
                 JOptionPane.showMessageDialog(null, "Usuario Actualizado");

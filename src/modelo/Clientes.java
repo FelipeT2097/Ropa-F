@@ -137,9 +137,9 @@ public class Clientes {
                     + // Insertaremos en la tabla clientes
                     "(`nombre_completo`, `tipo_documento_cliente`, `numero_documento`, "
                     + "`genero`, `telefono`, `correo_electronico`, `direccion`, "
-                    + "`ciudad`, `estado`) "
+                    + "`ciudad`) "
                     + // Estas son las columnas
-                    "VALUES (?,?,?,?,?,?,?,?,?)" // Estos son los 9 valores (?)
+                    "VALUES (?,?,?,?,?,?,?,?)" // Estos son los 9 valores (?)
             );
 
             // Cada setString/setInt reemplaza un ? en orden
@@ -156,17 +156,17 @@ public class Clientes {
             // Si es diferente de 0, significa que SÍ insertó algo
             if (ps.executeUpdate() != 0) {
                 // Mostrar mensaje de ÉXITO
-                JOptionPane.showMessageDialog(null, "✅ Cliente agregado exitosamente");
+                JOptionPane.showMessageDialog(null, "Cliente agregado exitosamente");
             } else {
                 // Mostrar mensaje de ERROR (no se insertó nada)
-                JOptionPane.showMessageDialog(null, "❌ Error al agregar cliente");
+                JOptionPane.showMessageDialog(null, "Error al agregar cliente");
             }
 
         } catch (SQLException ex) {
             // Si algo sale mal (ej: el número de documento ya existe)
             // capturamos el error aquí
             JOptionPane.showMessageDialog(null,
-                    "❌ Error al insertar cliente: " + ex.getMessage(),
+                    "Error al insertar cliente: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
             // También lo guardamos en el log para los desarrolladores
             Logger.getLogger(Clientes.class.getName()).log(Level.SEVERE, null, ex);

@@ -32,15 +32,14 @@ public class RegistrarVentas {
     }
 
     // REGISTRAR VENTA COMPLETA
-    // REGISTRAR VENTA COMPLETA
     public void registrarVenta() {
 
         Connection con = null;
 
         try {
 
-            // PASO 1: VALIDACIONES COMPLETAS
-            // Validar que hay productos
+            //VALIDACIONES COMPLETAS
+            //Validar que hay productos
             if (vista.getCantidadProductos() == 0) {
                 mensaje("Debe agregar productos a la venta");
                 return;
@@ -90,14 +89,14 @@ public class RegistrarVentas {
                 return;
             }
 
-            // Validar método de pago
+            //Validar método de pago
             String metodoPago = vista.getMetodoPagoSeleccionado();
             if (metodoPago == null || metodoPago.isEmpty() || metodoPago.equals("Seleccionar")) {
                 mensaje("Debe seleccionar un método de pago");
                 return;
             }
 
-            // Obtener usuario
+            //Obtener usuario
             String usuario = null;
             try {
                 usuario = modelo.Usuario_Sesion.getInstancia().getNombreUsuario();
@@ -109,10 +108,10 @@ public class RegistrarVentas {
                 usuario = "admin";
             }
 
-            // Estado de la venta
+            //Estado de la venta
             String estado = "pendiente";
 
-            // Buscar cliente en la base de datos por nombre
+            //Buscar cliente en la base de datos por nombre
             String tipoDocumentoCliente = "CC";
             String numeroDocumentoCliente = "0000000000";
 
@@ -169,7 +168,7 @@ public class RegistrarVentas {
                 }
             }
 
-            // PASO 2: CONECTAR Y TRANSACCIÓN
+            //CONECTAR Y TRANSACCIÓN
             con = ConexionDB.getConnection();
 
             if (con == null) {
@@ -178,7 +177,7 @@ public class RegistrarVentas {
 
             con.setAutoCommit(false);
 
-            // PASO 3: INSERTAR VENTA
+            //INSERTAR VENTA
             int ventaId = insertarVenta(con, nombreCompleto, subtotal, descuento,
                     total, metodoPago, estado, usuario,
                     tipoDocumentoCliente, numeroDocumentoCliente);
@@ -187,7 +186,7 @@ public class RegistrarVentas {
                 throw new SQLException("No se generó el ID de la venta");
             }
 
-            // PASO 4: INSERTAR DETALLE Y ACTUALIZAR STOCK
+            //INSERTAR DETALLE Y ACTUALIZAR STOCK
             int productosActualizados = insertarDetalleYStock(con, ventaId);
 
             // PASO 5: CREAR FACTURA
@@ -199,14 +198,27 @@ public class RegistrarVentas {
                 facturaId = -1;
             }
 
-            // PASO 6: CONFIRMAR TRANSACCIÓN
+            //CONFIRMAR TRANSACCIÓN
             con.commit();
+
+            try {
+                Auditoria auditoria = new Auditoria();
+                auditoria.registrarVenta(
+                        usuario,
+                        ventaId,
+                        total
+                );
+                System.out.println("✅Venta registrada en auditoría: ID=" + ventaId + ", Total=$" + total);
+            } catch (Exception e) {
+                System.err.println("Error al registrar venta en auditoría: " + e.getMessage());
+                // No interrumpir el flujo si falla la auditoría
+            }
 
             mensaje("Venta realizada correctamente.\n\n"
                     + "Factura Nº: " + facturaId + "\n"
                     + "Total: $" + String.format("%,.2f", total));
 
-            // PASO 7: IMPRIMIR (OPCIONAL)
+            //IMPRIMIR (OPCIONAL)
             int respuesta = JOptionPane.showConfirmDialog(
                     vista,
                     "¿Desea imprimir la factura?",
@@ -218,7 +230,7 @@ public class RegistrarVentas {
                 imprimirFactura(facturaId);
             }
 
-            // PASO 8: LIMPIAR
+            //LIMPIAR
             vista.limpiarFormulario();
 
         } catch (SQLException ex) {
@@ -414,7 +426,7 @@ public class RegistrarVentas {
                                 + "Cantidad solicitada: " + cantidad
                         );
                     }
-                    System.out.println("    ✓ Stock suficiente");
+                    System.out.println("Stock suficiente");
                 }
                 rsStock.close();
 
@@ -466,9 +478,7 @@ public class RegistrarVentas {
         }
     }
 
-    /**
-     * Crea la factura completa con todos los campos obligatorios
-     */
+    // Crea la factura completa con todos los campos obligatorios
     private int crearFactura(Connection con, int ventaId, String usuario) throws SQLException {
 
         if (usuario == null || usuario.isEmpty()) {
@@ -483,9 +493,7 @@ public class RegistrarVentas {
         ResultSet rsId = null;
 
         try {
-            // ==========================================================
-            // 1. OBTENER DATOS REALES DE LA VENTA
-            // ==========================================================
+            //OBTENER DATOS REALES DE LA VENTA
             String sqlVenta = "SELECT v.cliente, v.subtotal, v.descuento, v.total, v.metodo_pago, "
                     + "v.numero_documento_cliente, "
                     + "c.nombre_completo, c.tipo_documento_cliente, c.numero_documento, "
@@ -563,9 +571,7 @@ public class RegistrarVentas {
                 throw new SQLException("No se encontró la venta ID: " + ventaId);
             }
 
-            // ==========================================================
-            // 2. OBTENER CONFIGURACIÓN DE LA EMPRESA
-            // ==========================================================
+            //OBTENER CONFIGURACIÓN DE LA EMPRESA
             String sqlConfig = "SELECT nit_empresa, clave_tecnica_dian, ambiente_operacion "
                     + "FROM configuracion_facturacion LIMIT 1";
             psConfig = con.prepareStatement(sqlConfig);
@@ -584,18 +590,14 @@ public class RegistrarVentas {
             rsConfig.close();
             psConfig.close();
 
-            // ==========================================================
-            // 3. CALCULAR IVA Y PREPARAR DATOS
-            // ==========================================================
+            //CALCULAR IVA Y PREPARAR DATOS
             double baseIva = subtotal - descuento;
             double porcentajeIva = 19.0;
             double valorIva = baseIva * 0.19;
 
             String prefijo = "FACT";
 
-            // ==========================================================
             // 4. INSERTAR FACTURA TEMPORALMENTE
-            // ==========================================================
             String sqlFactura
                     = "INSERT INTO factura("
                     + "numero_factura, cufe, prefijo, consecutivo, venta_id, "
@@ -648,9 +650,7 @@ public class RegistrarVentas {
                 throw new SQLException("No se obtuvo el ID de la factura");
             }
 
-            // ==========================================================
-            // 5. GENERAR CUFE
-            // ==========================================================
+            //GENERAR CUFE
             String numeroFactura = prefijo + "-" + String.format("%06d", facturaId);
 
             // Obtener fecha actual para el CUFE
@@ -660,17 +660,15 @@ public class RegistrarVentas {
             String cufe = util.GeneradorCUFE.generarCUFESimple(
                     numeroFactura,
                     fechaFactura,
-                    baseIva, // Valor sin impuestos
-                    valorIva, // IVA
-                    total, // Total con IVA
-                    nitEmisor, // NIT emisor
-                    numeroDocumento, // Documento cliente
-                    claveTecnica // Clave técnica DIAN
+                    baseIva,
+                    valorIva,
+                    total,
+                    nitEmisor,
+                    numeroDocumento,
+                    claveTecnica
             );
 
-            // ==========================================================
-            // 6. ACTUALIZAR FACTURA CON CUFE Y NÚMERO REAL
-            // ==========================================================
+            //ACTUALIZAR FACTURA CON CUFE Y NÚMERO REAL
             PreparedStatement psUpdate = con.prepareStatement(
                     "UPDATE factura SET numero_factura = ?, consecutivo = ?, cufe = ? WHERE id = ?"
             );
@@ -708,92 +706,86 @@ public class RegistrarVentas {
     // IMPRIMIR FACTURA
     private void imprimirFactura(int facturaId) {
 
-    Connection con = null;
+        Connection con = null;
 
-    try {
-        if (facturaId <= 0) {
-            throw new Exception("ID de factura inválido: " + facturaId);
-        }
-
-        // Conectar a la BD
-        con = ConexionDB.getConnection();
-        if (con == null) {
-            throw new Exception("No hay conexión con la base de datos");
-        }
-
-        // ==========================================================
-        // OBTENER EL CUFE DE LA FACTURA
-        // ==========================================================
-        String sqlCufe = "SELECT cufe FROM factura WHERE id = ?";
-        PreparedStatement psCufe = con.prepareStatement(sqlCufe);
-        psCufe.setInt(1, facturaId);
-        ResultSet rsCufe = psCufe.executeQuery();
-        
-        String cufe = null;
-        if (rsCufe.next()) {
-            cufe = rsCufe.getString("cufe");
-        }
-        
-        rsCufe.close();
-        psCufe.close();
-        
-        // ==========================================================
-        // GENERAR CÓDIGO QR CON EL CUFE
-        // ==========================================================
-        java.awt.Image qrCodeImage = null;
-        
-        if (cufe != null && !cufe.isEmpty() && !cufe.equals("TEMP")) {
-            try {
-                // Generar QR usando la clase GeneradorQR
-                qrCodeImage = util.GeneradorQr.generarQRComoImage(cufe);
-            } catch (Exception e) {
-                System.err.println("Error al generar código QR: " + e.getMessage());
-                // Continuar sin QR si hay error
+        try {
+            if (facturaId <= 0) {
+                throw new Exception("ID de factura inválido: " + facturaId);
             }
-        }
 
-        // ==========================================================
-        // PREPARAR REPORTE JASPER
-        // ==========================================================
-        String rutaJRXML = "src/reportes/Facturas.jrxml";
-        File archivo = new File(rutaJRXML);
-        
-        if (!archivo.exists()) {
-            throw new Exception(
-                "No se encontró el archivo de reporte.\nRuta: " + archivo.getAbsolutePath()
+            // Conectar a la BD
+            con = ConexionDB.getConnection();
+            if (con == null) {
+                throw new Exception("No hay conexión con la base de datos");
+            }
+
+            // OBTENER EL CUFE DE LA FACTURA
+            String sqlCufe = "SELECT cufe FROM factura WHERE id = ?";
+            PreparedStatement psCufe = con.prepareStatement(sqlCufe);
+            psCufe.setInt(1, facturaId);
+            ResultSet rsCufe = psCufe.executeQuery();
+
+            String cufe = null;
+            if (rsCufe.next()) {
+                cufe = rsCufe.getString("cufe");
+            }
+
+            rsCufe.close();
+            psCufe.close();
+
+            // GENERAR CÓDIGO QR CON EL CUFE
+            java.awt.Image qrCodeImage = null;
+
+            if (cufe != null && !cufe.isEmpty() && !cufe.equals("TEMP")) {
+                try {
+                    // Generar QR usando la clase GeneradorQR
+                    qrCodeImage = util.GeneradorQr.generarQRComoImage(cufe);
+                } catch (Exception e) {
+                    System.err.println("Error al generar código QR: " + e.getMessage());
+                    // Continuar sin QR si hay error
+                }
+            }
+
+            // PREPARAR REPORTE JASPER
+            String rutaJRXML = "src/reportes/Facturas.jrxml";
+            File archivo = new File(rutaJRXML);
+
+            if (!archivo.exists()) {
+                throw new Exception(
+                        "No se encontró el archivo de reporte.\nRuta: " + archivo.getAbsolutePath()
+                );
+            }
+
+            // Compilar el JRXML
+            JasperReport reporte = JasperCompileManager.compileReport(rutaJRXML);
+
+            // Parámetros para el reporte
+            Map<String, Object> params = new HashMap<>();
+            params.put("idFactura", facturaId);
+
+            // Agregar QR como parámetro (puede ser null si no se generó)
+            params.put("qrCodeImage", qrCodeImage);
+
+            // Llenar reporte con datos
+            JasperPrint print = JasperFillManager.fillReport(
+                    reporte,
+                    params,
+                    con
             );
+
+            // Mostrar visor
+            JasperViewer.viewReport(print, false);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Error al imprimir factura:\n" + e.getMessage()
+            );
+        } finally {
+            ConexionDB.closeConnection(con);
         }
-
-        // Compilar el JRXML
-        JasperReport reporte = JasperCompileManager.compileReport(rutaJRXML);
-
-        // Parámetros para el reporte
-        Map<String, Object> params = new HashMap<>();
-        params.put("idFactura", facturaId);
-        
-        // Agregar QR como parámetro (puede ser null si no se generó)
-        params.put("qrCodeImage", qrCodeImage);
-
-        // Llenar reporte con datos
-        JasperPrint print = JasperFillManager.fillReport(
-            reporte,
-            params,
-            con
-        );
-
-        // Mostrar visor
-        JasperViewer.viewReport(print, false);
-
-    } catch (Exception e) {
-        e.printStackTrace();
-        JOptionPane.showMessageDialog(
-            null,
-            "❌ Error al imprimir factura:\n" + e.getMessage()
-        );
-    } finally {
-        ConexionDB.closeConnection(con);
     }
-}
 
     // UTILIDADES 
     private double getDouble(String txt) {

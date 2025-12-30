@@ -5,20 +5,339 @@
  */
 package vista;
 
+import controlador.Auditoria;
+import controlador.RegistrarReversiones;
+import java.text.SimpleDateFormat;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
  * @author piper
  */
 public class FrmReversiones extends javax.swing.JInternalFrame {
-    
-    public FrmReversiones() {
+
+    // Controlador
+    private RegistrarReversiones controlador;
+
+    // Factura actual cargada
+    private java.util.Map<String, Object> facturaActual;
+
+    // Usuario actual del sistema
+    private String usuarioActual;
+
+    // Formateador de fechas
+    private SimpleDateFormat formatoFecha = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+
+    public FrmReversiones(String usuario) {
 
         super("Reversiones", true, true, true, true); // Título, cerrable, redimensionable, movible, maximizable
+        this.usuarioActual = usuario;
+        this.controlador = new RegistrarReversiones();
 
         initComponents();
+        deshabilitarCampos();
+        cargarHistorial();
+
+        // Centrar el formulario
+        this.setSize(850, 800);
+
+        //REGISTRAR ACCESO AL MÓDULO (AGREGAR AL FINAL)
+        try {
+            Auditoria auditoria = new Auditoria();
+            auditoria.registrarConsulta(
+                    usuarioActual,
+                    "Reversiones",
+                    "Accedió al módulo de Reversiones"
+            );
+            System.out.println("Acceso al módulo de Reversiones registrado");
+        } catch (Exception e) {
+            System.err.println("Error al registrar acceso: " + e.getMessage());
+        }
     }
-    
+
+    //Constructor sin parámetros (para diseñador)
+    public FrmReversiones() {
+        this("admin"); // Usuario por defecto
+    }
+
+    //Buscar factura por número o ID
+    private void buscarFactura() {
+        String busqueda = jTextField_numero_factura.getText().trim();
+
+        if (busqueda.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Por favor ingresa un número de factura o ID",
+                    "Campo vacío",
+                    JOptionPane.WARNING_MESSAGE);
+            jTextField_numero_factura.requestFocus();
+            return;
+        }
+
+        // Buscar la factura
+        facturaActual = controlador.buscarFactura(busqueda);
+
+        if (facturaActual == null) {
+            JOptionPane.showMessageDialog(this,
+                    "No se encontró la factura: " + busqueda,
+                    "Factura no encontrada",
+                    JOptionPane.ERROR_MESSAGE);
+            limpiarFormulario();
+            return;
+        }
+
+        // Validar si puede ser reversada
+        int facturaId = ((Integer) facturaActual.get("id")).intValue();
+        String errorValidacion = controlador.validarFacturaParaReversion(facturaId);
+
+        if (errorValidacion != null) {
+            JOptionPane.showMessageDialog(this,
+                    "⚠️ " + errorValidacion,
+                    "No se puede reversar",
+                    JOptionPane.WARNING_MESSAGE);
+            limpiarFormulario();
+            return;
+        }
+
+        // Cargar datos en la interfaz
+        cargarDatosFactura();
+        cargarProductos(facturaId);
+
+        // Habilitar campos
+        habilitarCampos();
+
+        JOptionPane.showMessageDialog(this,
+                "Factura encontrada y lista para reversar",
+                "Factura cargada",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    //Cargar datos de la factura en los campos
+    private void cargarDatosFactura() {
+        try {
+            // Número de factura
+            jTextField1.setText((String) facturaActual.get("numero_factura"));
+
+            // Cliente
+            jTextField7.setText((String) facturaActual.get("nombre_cliente"));
+
+            // Documento
+            jTextField5.setText((String) facturaActual.get("numero_documento"));
+
+            // Total
+            double total = ((Double) facturaActual.get("total")).doubleValue();
+            jTextField8.setText(String.format("$%.2f", total));
+
+            // Fecha
+            java.sql.Timestamp fecha = (java.sql.Timestamp) facturaActual.get("fecha_emision");
+            jTextField4.setText(formatoFecha.format(fecha));
+
+            // Estado
+            String estado = (String) facturaActual.get("estado");
+            jTextField6.setText(estado.toUpperCase());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Error al cargar datos: " + e.getMessage());
+        }
+    }
+
+    //Cargar productos de la factura en la tabla
+    private void cargarProductos(int facturaId) {
+        DefaultTableModel modelo = (DefaultTableModel) jTable1.getModel();
+        modelo.setRowCount(0); // Limpiar tabla
+
+        java.util.List<java.util.Map<String, Object>> productos
+                = controlador.obtenerProductosFactura(facturaId);
+
+        for (java.util.Map<String, Object> producto : productos) {
+            Object[] fila = new Object[5];
+
+            fila[0] = producto.get("codigo");
+            fila[1] = producto.get("nombre");
+            fila[2] = producto.get("cantidad");
+
+            double precioUnitario = ((Double) producto.get("precio_unitario")).doubleValue();
+            fila[3] = String.format("$%.2f", precioUnitario);
+
+            double totalProd = ((Double) producto.get("total")).doubleValue();
+            fila[4] = String.format("$%.2f", totalProd);
+
+            modelo.addRow(fila);
+        }
+    }
+
+    //Reversar la factura actual
+    private void reversarFactura() {
+        // Validar que hay una factura cargada
+        if (facturaActual == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Primero debes buscar una factura",
+                    "No hay factura",
+                    JOptionPane.WARNING_MESSAGE);
+            jTextField_numero_factura.requestFocus();
+            return;
+        }
+
+        // Validar motivo
+        String motivo = textArea1.getText().trim();
+        if (motivo.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Debes ingresar el motivo de la reversión",
+                    "Motivo requerido",
+                    JOptionPane.WARNING_MESSAGE);
+            textArea1.requestFocus();
+            return;
+        }
+
+        if (motivo.length() < 10) {
+            JOptionPane.showMessageDialog(this,
+                    "⚠️ El motivo debe tener al menos 10 caracteres",
+                    "Motivo muy corto",
+                    JOptionPane.WARNING_MESSAGE);
+            textArea1.requestFocus();
+            return;
+        }
+
+        // Confirmar reversión
+        String numeroFactura = (String) facturaActual.get("numero_factura");
+        double total = ((Double) facturaActual.get("total")).doubleValue();
+
+        int confirmacion = JOptionPane.showConfirmDialog(this,
+                "¿ESTÁS SEGURO de reversar esta factura?\n\n"
+                + "Factura: " + numeroFactura + "\n"
+                + "Total: $" + String.format("%.2f", total) + "\n"
+                + "Cliente: " + facturaActual.get("nombre_cliente") + "\n\n"
+                + "ESTA ACCIÓN NO SE PUEDE DESHACER\n"
+                + "• Se generará una Nota Crédito\n"
+                + "• Se devolverá el stock al inventario\n"
+                + "• La factura quedará anulada\n\n"
+                + "Motivo: " + motivo,
+                "⚠️ CONFIRMAR REVERSIÓN",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        if (confirmacion != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        // Ejecutar reversión
+        int facturaId = ((Integer) facturaActual.get("id")).intValue();
+        int resultado = controlador.reversarFactura(facturaId, motivo, usuarioActual);
+
+        if (resultado > 0) {
+
+            // REGISTRAR EN AUDITORÍA
+            try {
+                Auditoria auditoria = new Auditoria();
+                auditoria.registrar(
+                        usuarioActual,
+                        "ANULAR",
+                        "Reversiones",
+                        "Reversó factura " + numeroFactura + " - Total: $" + String.format("%.2f", total)
+                        + " - Motivo: " + motivo
+                );
+                System.out.println("Reversión registrada en auditoría: " + numeroFactura);
+            } catch (Exception e) {
+                System.err.println("Error al registrar reversión: " + e.getMessage());
+            }
+            cargarHistorial();
+            limpiarFormulario();
+
+            JOptionPane.showMessageDialog(this,
+                    "REVERSIÓN EXITOSA\n\n"
+                    + "La factura ha sido reversada correctamente.\n"
+                    + "Revisa el historial para ver la Nota Crédito generada.",
+                    "Éxito",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+        // El controlador ya muestra mensajes de error
+    }
+
+    //Limpiar todos los campos del formulario
+    private void limpiarFormulario() {
+        // Limpiar búsqueda
+        jTextField_numero_factura.setText("");
+
+        // Limpiar datos de factura
+        jTextField1.setText("");
+        jTextField4.setText("");
+        jTextField5.setText("");
+        jTextField6.setText("");
+        jTextField7.setText("");
+        jTextField8.setText("");
+
+        // Limpiar motivo
+        textArea1.setText("");
+
+        // Limpiar tabla de productos
+        DefaultTableModel modelo = (DefaultTableModel) jTable1.getModel();
+        modelo.setRowCount(0);
+
+        // Limpiar factura actual
+        facturaActual = null;
+
+        // Deshabilitar campos
+        deshabilitarCampos();
+
+        // Focus en búsqueda
+        jTextField_numero_factura.requestFocus();
+    }
+
+    //Cargar historial de reversiones
+    private void cargarHistorial() {
+        DefaultTableModel modelo = (DefaultTableModel) jTable2.getModel();
+        modelo.setRowCount(0); // Limpiar tabla
+
+        java.util.List<java.util.Map<String, Object>> historial
+                = controlador.obtenerHistorialReversiones(20);
+
+        for (java.util.Map<String, Object> item : historial) {
+            Object[] fila = new Object[7];
+
+            fila[0] = item.get("numero_devolucion");
+            fila[1] = item.get("numero_factura_original");
+            fila[2] = item.get("nombre_cliente");
+
+            double totalDev = ((Double) item.get("total_devuelto")).doubleValue();
+            fila[3] = String.format("$%.2f", totalDev);
+
+            java.sql.Timestamp fecha = (java.sql.Timestamp) item.get("fecha_devolucion");
+            fila[4] = formatoFecha.format(fecha);
+
+            fila[5] = item.get("usuario_creacion");
+
+            String motivo = (String) item.get("motivo_devolucion");
+            // Truncar motivo si es muy largo
+            if (motivo != null && motivo.length() > 40) {
+                motivo = motivo.substring(0, 37) + "...";
+            }
+            fila[6] = motivo;
+
+            modelo.addRow(fila);
+        }
+    }
+
+    //Habilitar campos para reversión
+    private void habilitarCampos() {
+        textArea1.setEnabled(true);
+        jButton2.setEnabled(true);
+    }
+
+    // Deshabilitar campos
+    private void deshabilitarCampos() {
+        textArea1.setEnabled(false);
+        jButton2.setEnabled(false);
+
+        // Los campos de información siempre disabled (solo lectura)
+        jTextField1.setEnabled(false);
+        jTextField4.setEnabled(false);
+        jTextField5.setEnabled(false);
+        jTextField6.setEnabled(false);
+        jTextField7.setEnabled(false);
+        jTextField8.setEnabled(false);
+    }
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -29,10 +348,6 @@ public class FrmReversiones extends javax.swing.JInternalFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane3 = new javax.swing.JScrollPane();
-        jProgressBar1 = new javax.swing.JProgressBar();
-        jScrollBar1 = new javax.swing.JScrollBar();
-        jProgressBar3 = new javax.swing.JProgressBar();
         jPanel1 = new javax.swing.JPanel();
         jPanel_datos_reversion = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
@@ -65,7 +380,7 @@ public class FrmReversiones extends javax.swing.JInternalFrame {
         jButton2 = new javax.swing.JButton();
         jButton3 = new javax.swing.JButton();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         jPanel1.setBackground(new java.awt.Color(255, 255, 255));
 
@@ -81,6 +396,11 @@ public class FrmReversiones extends javax.swing.JInternalFrame {
         jButton1.setFont(new java.awt.Font("Lucida Sans", 1, 14)); // NOI18N
         jButton1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/busqueda.png"))); // NOI18N
         jButton1.setText("Buscar");
+        jButton1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton1ActionPerformed(evt);
+            }
+        });
 
         jLabel4.setFont(new java.awt.Font("Lucida Sans", 1, 18)); // NOI18N
         jLabel4.setText("Información de Factura");
@@ -226,6 +546,11 @@ public class FrmReversiones extends javax.swing.JInternalFrame {
         jButton5.setBackground(new java.awt.Color(255, 255, 255));
         jButton5.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/update.png"))); // NOI18N
         jButton5.setText("Actualizar");
+        jButton5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton5ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel_historiaLayout = new javax.swing.GroupLayout(jPanel_historia);
         jPanel_historia.setLayout(jPanel_historiaLayout);
@@ -286,10 +611,20 @@ public class FrmReversiones extends javax.swing.JInternalFrame {
         jButton2.setBackground(new java.awt.Color(255, 0, 0));
         jButton2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/reversar.png"))); // NOI18N
         jButton2.setText("REVERSAR FACTURA");
+        jButton2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton2ActionPerformed(evt);
+            }
+        });
 
         jButton3.setBackground(new java.awt.Color(255, 255, 255));
         jButton3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/eliminar.png"))); // NOI18N
         jButton3.setText("Limpiar");
+        jButton3.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton3ActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
@@ -358,13 +693,11 @@ public class FrmReversiones extends javax.swing.JInternalFrame {
                 .addContainerGap(10, Short.MAX_VALUE))
         );
 
-        jPanel2.getAccessibleContext().setAccessibleName("");
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-            .addGroup(layout.createSequentialGroup()
+            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
@@ -375,6 +708,26 @@ public class FrmReversiones extends javax.swing.JInternalFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+        buscarFactura();
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
+        // TODO add your handling code here:
+        reversarFactura();
+    }//GEN-LAST:event_jButton2ActionPerformed
+
+    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+        // TODO add your handling code here:
+        limpiarFormulario();
+    }//GEN-LAST:event_jButton3ActionPerformed
+
+    private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
+        // TODO add your handling code here:
+        cargarHistorial();
+    }//GEN-LAST:event_jButton5ActionPerformed
 
     /**
      * @param args the command line arguments
@@ -401,6 +754,7 @@ public class FrmReversiones extends javax.swing.JInternalFrame {
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(FrmReversiones.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
         //</editor-fold>
 
         /* Create and display the form */
@@ -430,12 +784,8 @@ public class FrmReversiones extends javax.swing.JInternalFrame {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel_datos_reversion;
     private javax.swing.JPanel jPanel_historia;
-    private javax.swing.JProgressBar jProgressBar1;
-    private javax.swing.JProgressBar jProgressBar3;
-    private javax.swing.JScrollBar jScrollBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JTable jTable1;
     private javax.swing.JTable jTable2;

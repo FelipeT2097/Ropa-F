@@ -4,19 +4,16 @@
  */
 package vista;
 
+import controlador.Auditoria;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import javax.swing.JOptionPane;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
-import javax.swing.JPasswordField;
 import javax.swing.border.Border;
 
 /**
@@ -277,7 +274,7 @@ public class Login extends javax.swing.JFrame {
         String nombre_usuario = jText_usuario.getText().trim();
         String contraseña = String.valueOf(jPassword.getPassword());
 
-        // ===== VALIDACIONES ANTES DE ENCRIPTAR =====
+        //VALIDACIONES ANTES DE ENCRIPTAR
         // Validar que no estén vacíos o con el placeholder
         if (nombre_usuario.isEmpty() || nombre_usuario.equalsIgnoreCase("Nombre de Usuario")) {
             JOptionPane.showMessageDialog(null, "Por favor, ingresa tu nombre de usuario", "Usuario vacío", JOptionPane.WARNING_MESSAGE);
@@ -303,7 +300,7 @@ public class Login extends javax.swing.JFrame {
             return;
         }
 
-        //  CONSULTAR EN LA BASE DE DATOS 
+        //CONSULTAR EN LA BASE DE DATOS 
         try {
             //Obtener TODOS los datos necesarios
             String query = "SELECT `id`, `nombre_completo`, `nombre_usuario`, `contraseña`, `rol` "
@@ -332,15 +329,22 @@ public class Login extends javax.swing.JFrame {
                 System.out.println("Nombre: " + nombreCompleto);
                 System.out.println("Rol: " + rolUsuario);
 
-                //  INICIAR SESIÓN EN EL SISTEMA
+                //INICIAR SESIÓN EN EL SISTEMA
                 modelo.Usuario_Sesion.getInstancia().iniciarSesion(
                         idUsuario,
                         nombreCompleto,
                         usuarioDB,
                         rolUsuario
                 );
+                //REGISTRAR LOGIN EN AUDITORÍA 
+                try {
+                    Auditoria auditoria = new Auditoria();
+                    auditoria.registrarLogin(usuarioDB);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
 
-                //  ABRIR VENTANA PRINCIPAL
+                //ABRIR VENTANA PRINCIPAL
                 Principal form = new Principal();
                 form.pack();
                 form.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -348,11 +352,11 @@ public class Login extends javax.swing.JFrame {
                 form.setLocationRelativeTo(null);
                 form.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-                // Cerrar ventana de login
+                //Cerrar ventana de login
                 this.dispose();
 
             } else {
-                //  LOGIN FALLIDO
+                //LOGIN FALLIDO
                 System.out.println("No se encontró el usuario con esas credenciales");
                 JOptionPane.showMessageDialog(null,
                         "Usuario o contraseña incorrectos",
@@ -368,7 +372,7 @@ public class Login extends javax.swing.JFrame {
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
         } finally {
-            // CERRAR RECURSOS
+            //CERRAR RECURSOS
             try {
                 if (rs != null) {
                     rs.close();
@@ -386,11 +390,11 @@ public class Login extends javax.swing.JFrame {
     private void jLabel_registroMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel_registroMouseClicked
         // TODO add your handling code here:
         // Cerrar el JFrame actual
-        dispose();
+        /* dispose();
 
         // Abrir el JFrame de registro
         FrmRegister registro = new FrmRegister();
-        registro.setVisible(true);
+        registro.setVisible(true);*/
     }//GEN-LAST:event_jLabel_registroMouseClicked
 
     private void jLabel_minimizarMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel_minimizarMouseClicked

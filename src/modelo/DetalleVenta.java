@@ -184,12 +184,7 @@ public class DetalleVenta {
         return resultado;
     }
 
-    /**
-     * Registra múltiples detalles de venta en una transacción
-     *
-     * @param detalles Lista de detalles a insertar
-     * @return true si todos se insertaron correctamente
-     */
+    //Registra múltiples detalles de venta en una transacción
     public static boolean registrarDetallesVenta(ArrayList<DetalleVenta> detalles) {
         Connection con = null;
         PreparedStatement ps = null;
@@ -304,7 +299,6 @@ public class DetalleVenta {
     }
 
     //Actualiza el stock de productos después de una venta
-     
     public static boolean actualizarStockProductos(ArrayList<DetalleVenta> detalles) {
         Connection con = null;
         PreparedStatement ps = null;

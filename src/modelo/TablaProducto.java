@@ -4,11 +4,6 @@
  */
 package modelo;
 
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import javax.swing.Icon;
-import javax.swing.JOptionPane;
-import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 
 /**
@@ -16,6 +11,7 @@ import javax.swing.table.AbstractTableModel;
  * @author piper
  */
 public class TablaProducto extends AbstractTableModel {
+
     private String[] columnNames;
     private Object[][] data;
 
@@ -45,7 +41,7 @@ public class TablaProducto extends AbstractTableModel {
     }
 
     // Método para añadir el MouseListener a la JTable
-   /* public void addMouseListenerToTable(JTable jTable_productos, controlador.Producto producto) {
+    /* public void addMouseListenerToTable(JTable jTable_productos, controlador.Producto producto) {
         jTable_productos.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {

@@ -13,7 +13,6 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.border.Border;
 
-
 /**
  *
  *
@@ -66,9 +65,11 @@ public class FrmRegister extends javax.swing.JFrame {
         jTextField_nombre_usuario = new javax.swing.JTextField();
         jTextField_num_doc1 = new javax.swing.JTextField();
         jTextField_num_tel2 = new javax.swing.JTextField();
-        jTextField_correo1 = new javax.swing.JTextField();
         jPasswordField1 = new javax.swing.JPasswordField();
-        jPasswordField_confirm = new javax.swing.JPasswordField();
+        jLabel1 = new javax.swing.JLabel();
+        jPasswordField_confirm2 = new javax.swing.JPasswordField();
+        jTextField_correo = new javax.swing.JTextField();
+        jComboBox_rol = new javax.swing.JComboBox<>();
         jPanel5 = new javax.swing.JPanel();
         jLabel22 = new javax.swing.JLabel();
         jText_inicio_sesion = new javax.swing.JTextField();
@@ -153,7 +154,7 @@ public class FrmRegister extends javax.swing.JFrame {
             }
         });
         jPanel4.add(jBtn_registrar);
-        jBtn_registrar.setBounds(130, 460, 140, 38);
+        jBtn_registrar.setBounds(130, 480, 140, 38);
 
         jTextField_nombre_completo.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.LOWERED, null, new java.awt.Color(153, 153, 153), null, null));
         jPanel4.add(jTextField_nombre_completo);
@@ -171,17 +172,25 @@ public class FrmRegister extends javax.swing.JFrame {
         jPanel4.add(jTextField_num_tel2);
         jTextField_num_tel2.setBounds(170, 280, 150, 22);
 
-        jTextField_correo1.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.LOWERED, null, new java.awt.Color(153, 153, 153), null, null));
-        jPanel4.add(jTextField_correo1);
-        jTextField_correo1.setBounds(170, 320, 150, 22);
-
         jPasswordField1.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.LOWERED, null, new java.awt.Color(153, 153, 153), null, null));
         jPanel4.add(jPasswordField1);
         jPasswordField1.setBounds(170, 350, 150, 22);
 
-        jPasswordField_confirm.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.LOWERED, null, new java.awt.Color(153, 153, 153), null, null));
-        jPanel4.add(jPasswordField_confirm);
-        jPasswordField_confirm.setBounds(170, 390, 150, 22);
+        jLabel1.setText("Rol:");
+        jPanel4.add(jLabel1);
+        jLabel1.setBounds(120, 420, 37, 16);
+
+        jPasswordField_confirm2.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.LOWERED, null, new java.awt.Color(153, 153, 153), null, null));
+        jPanel4.add(jPasswordField_confirm2);
+        jPasswordField_confirm2.setBounds(170, 380, 150, 22);
+
+        jTextField_correo.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.LOWERED, null, new java.awt.Color(153, 153, 153), null, null));
+        jPanel4.add(jTextField_correo);
+        jTextField_correo.setBounds(170, 320, 150, 22);
+
+        jComboBox_rol.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Vendedor", " Almacenista" }));
+        jPanel4.add(jComboBox_rol);
+        jComboBox_rol.setBounds(170, 420, 150, 22);
 
         jPanel3.add(jPanel4);
         jPanel4.setBounds(0, 0, 390, 570);
@@ -271,66 +280,67 @@ public class FrmRegister extends javax.swing.JFrame {
 
     private void jBtn_registrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jBtn_registrarActionPerformed
         // TODO add your handling code here:
-         // Obtener los datos de los campos
-    String nombreCompleto = jTextField_nombre_completo.getText();
-    String nombreUsuario = jTextField_nombre_usuario.getText();
-    String tipoId = (String) jComboBox3.getSelectedItem();
-    String numeroDocumento = jTextField_num_doc1.getText();
-    String telefono = jTextField_num_tel2.getText();
-    String correo = jTextField_correo1.getText();
-    String contraseña = String.valueOf(jPasswordField1.getPassword());
-    String pass2 = String.valueOf(jPasswordField_confirm.getPassword());
-    String genero = "Hombre";
+        // Obtener los datos de los campos
+        String nombreCompleto = jTextField_nombre_completo.getText();
+        String nombreUsuario = jTextField_nombre_usuario.getText();
+        String tipoId = (String) jComboBox3.getSelectedItem();
+        String numeroDocumento = jTextField_num_doc1.getText();
+        String telefono = jTextField_num_tel2.getText();
+        String correo = jTextField_correo.getText();
+        String contraseña = String.valueOf(jPasswordField1.getPassword());
+        String pass2 = String.valueOf(jPasswordField1.getPassword());
+        String rol = (String) jComboBox_rol.getSelectedItem();
+        String genero = "Hombre";
 
-    // Validar los campos
-    if (verifyFields()) {
-        // Validar que las contraseñas coincidan
-        if (!contraseña.equals(pass2)) {
-            JOptionPane.showMessageDialog(null, "Las contraseñas no coinciden.", "Advertencia", JOptionPane.WARNING_MESSAGE);
-            return; // Salir si las contraseñas no coinciden
-        }
+        // Validar los campos
+        if (verifyFields()) {
+            // Validar que las contraseñas coincidan
+            if (!contraseña.equals(pass2)) {
+                JOptionPane.showMessageDialog(null, "Las contraseñas no coinciden.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+                return; // Salir si las contraseñas no coinciden
+            }
 
-        // Encriptar la contraseña utilizando SHA-1
-        String sha1 = "";
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-1");
-            digest.reset();
-            digest.update(contraseña.getBytes("utf8"));
-            sha1 = String.format("%040x", new BigInteger(1, digest.digest()));
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Error al encriptar la contraseña", "Error", JOptionPane.ERROR_MESSAGE);
-            return; // Salir del método si ocurre un error
-        }
+            // Encriptar la contraseña utilizando SHA-1
+            String sha1 = "";
+            try {
+                MessageDigest digest = MessageDigest.getInstance("SHA-1");
+                digest.reset();
+                digest.update(contraseña.getBytes("utf8"));
+                sha1 = String.format("%040x", new BigInteger(1, digest.digest()));
+            } catch (Exception e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(null, "Error al encriptar la contraseña", "Error", JOptionPane.ERROR_MESSAGE);
+                return; // Salir del método si ocurre un error
+            }
 
-        // Verificar el género
-        if (jRadioButton_mujer.isSelected()) {
-            genero = "Mujer";
-        }
-        
-        modelo.Usuarios usuarios;
-        // Crear un objeto de usuario
-        usuarios = new modelo.Usuarios(1, nombreCompleto, nombreUsuario, tipoId, numeroDocumento, genero, telefono, correo, sha1);
+            // Verificar el género
+            if (jRadioButton_mujer.isSelected()) {
+                genero = "Mujer";
+            }
 
-        // Intentar insertar el usuario en la base de datos
-        try {
-            modelo.Usuarios.insertUser(usuarios);
-            JOptionPane.showMessageDialog(null, "Registrado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            mostrarLogin(); // Redirigir a la ventana de inicio de sesión
-        } catch (Exception e) {
-            e.printStackTrace(); // Imprimir detalles del error
-            JOptionPane.showMessageDialog(null, "Error al registrar el usuario: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            modelo.Usuarios usuarios;
+            // Crear un objeto de usuario
+            usuarios = new modelo.Usuarios(1, nombreCompleto, nombreUsuario, tipoId, numeroDocumento, genero, telefono, correo, sha1, rol);
+
+            // Intentar insertar el usuario en la base de datos
+            try {
+                modelo.Usuarios.insertUser(usuarios);
+                JOptionPane.showMessageDialog(null, "Registrado correctamente", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                mostrarLogin(); // Redirigir a la ventana de inicio de sesión
+            } catch (Exception e) {
+                e.printStackTrace(); // Imprimir detalles del error
+                JOptionPane.showMessageDialog(null, "Error al registrar el usuario: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "Por favor, complete todos los campos obligatorios.", "Advertencia", JOptionPane.WARNING_MESSAGE);
         }
-    } else {
-        JOptionPane.showMessageDialog(null, "Por favor, complete todos los campos obligatorios.", "Advertencia", JOptionPane.WARNING_MESSAGE);
-    }
 
     }
 
 // Método para mostrar la ventana de inicio de sesión
     private void mostrarLogin() {
         this.dispose(); // Cierra la ventana actual
-        Login login = new Login(); 
+        Login login = new Login();
         login.setVisible(true);
     }
 
@@ -339,21 +349,22 @@ public class FrmRegister extends javax.swing.JFrame {
     }//GEN-LAST:event_jBtn_registrarActionPerformed
 */
     // create a function to verify the empty fields  
-     public boolean verifyFields() {
+    public boolean verifyFields() {
         String name = jTextField_nombre_completo.getText();
         String username = jTextField_nombre_usuario.getText();
         String tipoId = (String) jComboBox3.getSelectedItem();
         String id = jTextField_num_doc1.getText();
         String genero = "Hombre";
         String telefono = jTextField_num_tel2.getText();
-        String email = jTextField_correo1.getText();
+        String email = jTextField_correo.getText();
         String pass = String.valueOf(jPasswordField1.getPassword());
-        String passconf = String.valueOf(jPasswordField_confirm.getPassword());
+        String passconf = String.valueOf(jPasswordField_confirm2.getPassword());
+        String rol = (String) jComboBox_rol.getSelectedItem();
 
         // Verificar si hay campos vacíos
         if (name.trim().equals("") || username.trim().equals("") || tipoId == null || tipoId.trim().equals("")
                 || id.trim().equals("") || telefono.trim().equals("") || email.trim().equals("")
-                || pass.trim().equals("") || passconf.trim().equals("")) {
+                || pass.trim().equals("") || passconf.trim().equals("") || rol == null || rol.trim().equals("")) {
             JOptionPane.showMessageDialog(null, "Uno o más campos están vacíos", "Campos vacíos", 2);
             return false;
         } // Verificar si las contraseñas coinciden
@@ -365,6 +376,7 @@ public class FrmRegister extends javax.swing.JFrame {
             return true;
         }
     }
+
     /**
      * @param args the command line arguments
      */
@@ -405,6 +417,8 @@ public class FrmRegister extends javax.swing.JFrame {
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.JButton jBtn_registrar;
     private javax.swing.JComboBox<String> jComboBox3;
+    private javax.swing.JComboBox<String> jComboBox_rol;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel14;
@@ -420,11 +434,11 @@ public class FrmRegister extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanel5;
     private javax.swing.JPasswordField jPasswordField1;
-    private javax.swing.JPasswordField jPasswordField_confirm;
+    private javax.swing.JPasswordField jPasswordField_confirm2;
     private javax.swing.JRadioButton jRadioButton3;
     private javax.swing.JRadioButton jRadioButton_hombre;
     private javax.swing.JRadioButton jRadioButton_mujer;
-    private javax.swing.JTextField jTextField_correo1;
+    private javax.swing.JTextField jTextField_correo;
     private javax.swing.JTextField jTextField_nombre_completo;
     private javax.swing.JTextField jTextField_nombre_usuario;
     private javax.swing.JTextField jTextField_num_doc1;
