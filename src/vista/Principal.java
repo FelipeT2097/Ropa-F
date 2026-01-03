@@ -4,11 +4,13 @@
  */
 package vista;
 
+import controlador.GeneradorReportes;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
@@ -20,13 +22,59 @@ import javax.swing.Timer;
  */
 public class Principal extends javax.swing.JFrame {
 
+        /**
+     * Muestra alertas como panel flotante en el desktop
+     */
+    private void mostrarAlertasIniciales() {
+        try {
+            GeneradorReportes reportes = new GeneradorReportes();
+            Map<String, Integer> resumen = reportes.obtenerResumenAlertas();
+
+            int stockBajo = resumen.get("stock_bajo") != null ? resumen.get("stock_bajo") : 0;
+            int sinMovimiento = resumen.get("sin_movimiento") != null ? resumen.get("sin_movimiento") : 0;
+            int ventasHoy = resumen.get("ventas_hoy") != null ? resumen.get("ventas_hoy") : 0;
+
+            // Si hay alertas importantes O siempre mostrar el panel
+            if (stockBajo > 0 || sinMovimiento > 0 || true) { // true = siempre mostrar
+                mostrarPanelAlertaEnDesktop(stockBajo, sinMovimiento, ventasHoy, reportes);
+            } else {
+                System.out.println("Sistema OK - Sin alertas importantes");
+                System.out.println("Ventas realizadas hoy: " + ventasHoy);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error al cargar alertas: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Muestra el panel de alerta flotante en el desktop
+     */
+    private void mostrarPanelAlertaEnDesktop(int stockBajo, int sinMovimiento, int ventasHoy, GeneradorReportes reportes) {
+        // Crear el panel de alerta
+        PanelAlertas panelAlerta = new PanelAlertas(stockBajo, sinMovimiento, ventasHoy, reportes);
+
+        // Posicionar en la esquina superior derecha
+        int x = jDesktopPane_escritorio.getWidth() - panelAlerta.getWidth() - 20;
+        int y = 20;
+        panelAlerta.setLocation(x, y);
+
+        // Agregar al desktop
+        jDesktopPane_escritorio.add(panelAlerta);
+        jDesktopPane_escritorio.moveToFront(panelAlerta);
+        jDesktopPane_escritorio.repaint();
+
+        // Animación de entrada (opcional)
+        panelAlerta.setVisible(true);
+    }
+
     /**
      * Creates new form HmPrincipal
      */
     public Principal() {
         initComponents();
         crearPanelUsuarioEnBarra();
-
         timer.start();
         configurarPermisosPorRol();
 
@@ -73,6 +121,9 @@ public class Principal extends javax.swing.JFrame {
 
         // Mostrar información del usuario
         mostrarInfoUsuario();
+
+        // Mostrar alertas del sistema al iniciar
+        mostrarAlertasIniciales();
     }
 
     //Crea un panel con info del usuario en la barra de menú
@@ -152,10 +203,10 @@ public class Principal extends javax.swing.JFrame {
         modelo.Usuario_Sesion sesion = modelo.Usuario_Sesion.getInstancia();
 
         if (sesion.esVendedor()) {
-            // Los vendedores NO pueden gestionar usuarios
+            //Los vendedores NO pueden gestionar usuarios
             jMenu_GUSUARIOS.setVisible(false);
 
-            // Los vendedores NO pueden gestionar proveedores
+            //Los vendedores NO pueden gestionar proveedores
             jMenu_gestion_proveedores.setVisible(false);
 
             //Pueden ver catálogo 
@@ -164,33 +215,33 @@ public class Principal extends javax.swing.JFrame {
             //Pueden realizar ventas
             jMenu_punto_venta.setVisible(true);
 
-            // Los vendedores NO pueden realizar reversiones
+            //Los vendedores NO pueden realizar reversiones
             jMenu_reversiones.setVisible(false);
 
-            // Los vendedor NO pueden ver el modulo de auditoria
+            //Los vendedor NO pueden ver el modulo de auditoria
             jMenuItem_auditoria.setVisible(false);
 
         } else if (sesion.esAlmacenista()) {
             // Los almacenistas NO pueden gestionar usuarios
             jMenu_GUSUARIOS.setVisible(false);
 
-            //  Pueden gestionar proveedores
+            //Pueden gestionar proveedores
             jMenu_gestion_proveedores.setVisible(true);
 
-            // Pueden gestionar catálogo/inventario
+            //Pueden gestionar catálogo/inventario
             jMenu_CATALOGO.setVisible(true);
 
-            //no pueden realizar ventas
+            //No pueden realizar ventas
             jMenu_punto_venta.setVisible(false);
 
-            // Los almacenista NO pueden realizar reversiones
+            //Los almacenista NO pueden realizar reversiones
             jMenu_reversiones.setVisible(false);
 
-            // Los almacenista NO pueden ver el modulo de auditoria
+            //Los almacenista NO pueden ver el modulo de auditoria
             jMenuItem_auditoria.setVisible(false);
 
         } else if (sesion.esAdmin()) {
-            // Los administradores ven TODO
+            //Los administradores ven TODO
             jMenu_GUSUARIOS.setVisible(true);
             jMenu_gestion_proveedores.setVisible(true);
             jMenu_CATALOGO.setVisible(true);
