@@ -434,9 +434,9 @@ public class GeneradorReportes {
         return resumen;
     }
 
-    // MÉTODOS AUXILIARES
+
     // Ejecuta una consulta SQL que retorna una lista de ventas.
-    //étodo auxiliar para evitar duplicación de código.
+    //método auxiliar para evitar duplicación de código.
     private ArrayList<Map<String, Object>> ejecutarConsultaVentas(String sql) {
         ArrayList<Map<String, Object>> ventas = new ArrayList<>();
         PreparedStatement ps = null;
@@ -731,5 +731,91 @@ public class GeneradorReportes {
         }
 
         return 0;
+    }
+
+    //Obtiene productos sin movimiento en los últimos X días
+    public ArrayList<Map<String, Object>> obtenerProductosSinMovimiento(int dias) {
+        Connection conn = null;
+        PreparedStatement pst = null;
+        ResultSet rs = null;
+        ArrayList<Map<String, Object>> productos = new ArrayList<Map<String, Object>>();
+
+        try {
+            conn = ConexionDB.getConnection();
+
+            // Productos que no aparecen en ventas recientes
+            String sql = "SELECT p.codigo, p.nombre, p.talla, p.color, p.cantidad, p.precio "
+                    + "FROM productos p "
+                    + "WHERE p.id NOT IN ( "
+                    + "    SELECT DISTINCT dv.producto_id "
+                    + "    FROM detalle_ventas dv "
+                    + "    INNER JOIN ventas v ON dv.venta_id = v.id "
+                    + "    WHERE v.fecha >= DATE_SUB(NOW(), INTERVAL ? DAY) "
+                    + ") "
+                    + "AND p.cantidad > 0 "
+                    + "ORDER BY p.cantidad DESC "
+                    + "LIMIT 10";
+
+            pst = conn.prepareStatement(sql);
+            pst.setInt(1, dias);
+            rs = pst.executeQuery();
+
+            while (rs.next()) {
+                Map<String, Object> producto = new HashMap<String, Object>();
+                producto.put("codigo", rs.getString("codigo"));
+                producto.put("nombre", rs.getString("nombre"));
+                producto.put("talla", rs.getString("talla"));
+                producto.put("color", rs.getString("color"));
+                producto.put("cantidad", rs.getInt("cantidad"));
+                producto.put("precio", rs.getDouble("precio"));
+                productos.add(producto);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al obtener productos sin movimiento: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pst != null) {
+                    pst.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                System.err.println("Error al cerrar recursos: " + e.getMessage());
+            }
+        }
+
+        return productos;
+    }
+
+    //Obtiene un resumen de alertas del sistema
+    public Map<String, Integer> obtenerResumenAlertas() {
+        Map<String, Integer> resumen = new HashMap<String, Integer>();
+
+        try {
+            // Stock bajo
+            int stockBajo = obtenerProductosStockBajo();
+            resumen.put("stock_bajo", stockBajo);
+
+            // Sin movimiento (30 días)
+            ArrayList<Map<String, Object>> sinMovimiento = obtenerProductosSinMovimiento(30);
+            resumen.put("sin_movimiento", sinMovimiento.size());
+
+            // Ventas del día
+            Map<String, Object> ventasHoy = obtenerResumenVentasDelDia();
+            Object totalVentas = ventasHoy.get("total_ventas");
+            resumen.put("ventas_hoy", totalVentas != null ? ((Number) totalVentas).intValue() : 0);
+
+        } catch (Exception e) {
+            System.err.println("Error al obtener resumen de alertas: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return resumen;
     }
 }

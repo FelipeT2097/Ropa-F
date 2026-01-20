@@ -10,7 +10,6 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.io.InputStream;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,62 +46,16 @@ public class Inventario extends javax.swing.JInternalFrame {
         JTableHeader th = jTable_productos.getTableHeader();
         th.setFont(new Font("Tahoma", Font.PLAIN, 16));
 
-        // Inicializa el modelo de la tabla
-        populateJtable("");  // Llama a este método para llenar la tabla
-    }
-
-    private JTabbedPane pestañasPadre; // asigna esto al JTabbedPane que gestione tu app
-
-    private void abrirVentanaActualizar() {
-        if (jTable_productos == null) {
-            JOptionPane.showMessageDialog(this, "La tabla no está inicializada.");
-            return;
-        }
-
-        int fila = jTable_productos.getSelectedRow();
-        if (fila == -1) {
-            JOptionPane.showMessageDialog(this, "Seleccione un producto primero.");
-            return;
-        }
-
-        try {
-            String id = jTable_productos.getValueAt(fila, 0).toString();
-            String codigo = jTable_productos.getValueAt(fila, 1).toString();
-            String nombre = jTable_productos.getValueAt(fila, 2).toString();
-            String precio = jTable_productos.getValueAt(fila, 3).toString().replace("$", "").trim();
-            String cantidad = jTable_productos.getValueAt(fila, 4).toString();
-            String talla = jTable_productos.getValueAt(fila, 5).toString();
-            String color = jTable_productos.getValueAt(fila, 6).toString();
-            String genero = jTable_productos.getValueAt(fila, 7).toString();
-
-            // Crear panel de actualización (puede ser tu FrmActualizarProductos que extienda JPanel)
-            FrmActualizarProductos actualizar = new FrmActualizarProductos(); // preferible si es JPanel o componente
-            actualizar.setDatosProducto(id, codigo, nombre, precio, cantidad, talla, color, genero);
-
-            // Añadir como nueva pestaña (evitar duplicados)
-            String titulo = "Editar: " + codigo;
-            for (int i = 0; i < pestañasPadre.getTabCount(); i++) {
-                if (pestañasPadre.getTitleAt(i).equals(titulo)) {
-                    pestañasPadre.setSelectedIndex(i);
-                    return;
-                }
-            }
-
-            pestañasPadre.addTab(titulo, actualizar);
-            pestañasPadre.setSelectedComponent(actualizar);
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al abrir pestaña de actualización: " + e.getMessage());
-            e.printStackTrace();
-        }
     }
 
     public void populateJtable(String val) {
 
         modelo.Producto producto = new modelo.Producto();
         ArrayList<modelo.Producto> productosList = producto.productoList(val);
-        String[] colNames = {"Id", "Codigo", "Nombre", "Precio", "Cantidad", "Talla", "Color", "Genero"};
-        Object[][] rows = new Object[productosList.size()][8];
+
+        // Agregar "Costo Compra" a las columnas
+        String[] colNames = {"Id", "Codigo", "Nombre", "Precio", "Cantidad", "Talla", "Color", "Genero", "Costo Compra"};
+        Object[][] rows = new Object[productosList.size()][9];  
 
         for (int i = 0; i < productosList.size(); i++) {
             rows[i][0] = productosList.get(i).getId();
@@ -113,18 +66,16 @@ public class Inventario extends javax.swing.JInternalFrame {
             rows[i][5] = productosList.get(i).getTalla();
             rows[i][6] = productosList.get(i).getColor();
             rows[i][7] = productosList.get(i).getGenero();
+            rows[i][8] = productosList.get(i).getCostoCompra();  
         }
 
-        // Instancia el modelo de tabla aquí
         TablaProducto modeloTabla = new TablaProducto(rows, colNames);
         jTable_productos.setModel(modeloTabla);
         jTable_productos.setRowHeight(40);
 
-        // Configura anchos de columnas
-        jTable_productos.getColumnModel().getColumn(5).setPreferredWidth(150); // Color
-        jTable_productos.getColumnModel().getColumn(6).setPreferredWidth(120); // Talla o Imagen
-
-        // modeloTabla.addMouseListenerToTable(jTable_productos, producto);
+        // Ajustar anchos de columnas
+        jTable_productos.getColumnModel().getColumn(5).setPreferredWidth(150);
+        jTable_productos.getColumnModel().getColumn(6).setPreferredWidth(120);
     }
 
     /**
@@ -333,7 +284,7 @@ public class Inventario extends javax.swing.JInternalFrame {
         try {
             Integer rowIndex = jTable_productos.getSelectedRow();
             Integer id = Integer.valueOf(jTable_productos.getValueAt(rowIndex, 0).toString());
-            String codigo = jTable_productos.getValueAt(rowIndex, 1).toString();  
+            String codigo = jTable_productos.getValueAt(rowIndex, 1).toString();
             String nombre = jTable_productos.getValueAt(rowIndex, 2).toString();
 
             modelo.Producto.eliminarProducto(codigo);
@@ -418,10 +369,11 @@ public class Inventario extends javax.swing.JInternalFrame {
                 String talla = jTable_productos.getValueAt(fila, 5).toString();
                 String color = jTable_productos.getValueAt(fila, 6).toString();
                 String genero = jTable_productos.getValueAt(fila, 7).toString();
+                String costoCompra = jTable_productos.getValueAt(fila, 8).toString();
 
                 // Crear y configurar la ventana de actualización
                 FrmActualizarProductos actualizarProductos = new FrmActualizarProductos();
-                actualizarProductos.setDatosProducto(id, codigo, nombre, precio, cantidad, talla, color, genero);
+                actualizarProductos.setDatosProducto(id, codigo, nombre, precio, cantidad, talla, color, genero, costoCompra);
                 actualizarProductos.pack();
                 actualizarProductos.setVisible(true);
                 actualizarProductos.setLocationRelativeTo(null);

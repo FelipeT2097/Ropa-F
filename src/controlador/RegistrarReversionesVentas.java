@@ -6,7 +6,6 @@
 package controlador;
 
 import java.sql.*;
-import java.util.*;
 import javax.swing.JOptionPane;
 import modelo.ConexionDB;
 
@@ -14,7 +13,7 @@ import modelo.ConexionDB;
  *
  * @author piper
  */
-public class RegistrarReversiones {
+public class RegistrarReversionesVentas {
 
     //Busca una factura por número o ID
     public java.util.Map<String, Object> buscarFactura(String busqueda) {
@@ -216,8 +215,9 @@ public class RegistrarReversiones {
                     + "subtotal_devuelto, iva_devuelto, total_devuelto, "
                     + "tipo_devolucion, motivo_devolucion, "
                     + "estado, usuario_creacion, "
-                    + "procesado_automaticamente"
-                    + ") VALUES (?, 'NC', ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, 'total', ?, 'aprobada', ?, 1)";
+                    + "procesado_automaticamente, "
+                    + "observaciones, metodo_reembolso" // ← AGREGADO
+                    + ") VALUES (?, 'NC', ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, 'total', ?, 'aprobada', ?, 1, ?, ?)";
 
             ps3 = con.prepareStatement(sqlDevolucion, Statement.RETURN_GENERATED_KEYS);
             ps3.setString(1, numeroNC);
@@ -232,6 +232,8 @@ public class RegistrarReversiones {
             ps3.setDouble(10, total);
             ps3.setString(11, motivo);
             ps3.setString(12, usuario);
+            ps3.setString(13, "Reversión completa de factura: " + numeroFactura);  // ← observaciones
+            ps3.setString(14, "Nota Crédito");
 
             ps3.executeUpdate();
 
@@ -247,17 +249,20 @@ public class RegistrarReversiones {
             String sqlDetalle = "INSERT INTO detalle_devoluciones ("
                     + "devolucion_id, producto_id, codigo_producto, nombre_producto, "
                     + "cantidad_original, cantidad_devuelta, "
-                    + "precio_unitario, subtotal, iva, total"
+                    + "precio_unitario, subtotal, iva, total, "
+                    + "motivo_producto, estado_producto"
                     + ") "
                     + "SELECT ?, dv.producto_id, dv.codigo_producto, dv.nombre_producto, "
                     + "dv.cantidad, dv.cantidad, "
-                    + "dv.precio_unitario, dv.subtotal, dv.iva, dv.totalFactura "
+                    + "dv.precio_unitario, dv.subtotal, dv.iva, dv.totalFactura, "
+                    + "?, 'devuelto' "
                     + "FROM detalle_ventas dv "
                     + "WHERE dv.venta_id = ?";
 
             ps4 = con.prepareStatement(sqlDetalle);
             ps4.setInt(1, devolucionId);
-            ps4.setInt(2, ventaId);
+            ps4.setString(2, motivo);
+            ps4.setInt(3, ventaId);
             ps4.executeUpdate();
             ps4.close();
 

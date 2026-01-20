@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
-import modelo.ConexionDB;
 
 /**
  *
@@ -30,11 +29,12 @@ public class Producto {
     private String talla;
     private String color;
     private String genero;
+    private double costoCompra;
 
     public Producto() {
     }
 
-    public Producto(Integer id, String codigo, String nombre, String precio, Integer cantidad, String talla, String color, String genero) {
+    public Producto(int id, String codigo, String nombre, String precio, int cantidad, String talla, String color, String genero) {
 
         this.id = id;
         this.codigo = codigo;
@@ -110,13 +110,23 @@ public class Producto {
         this.genero = genero;
     }
 
+    public double getCostoCompra() {
+        return costoCompra;
+    }
+
+    public void setCostoCompra(double costoCompra) {
+        this.costoCompra = costoCompra;
+    }
+
     // insertar un nuevo producto
     public static void insertarProducto(Producto producto) {
         Connection con = ConexionDB.getConnection();
         PreparedStatement ps;
 
         try {
-            ps = con.prepareStatement("INSERT INTO `productos`(`codigo`, `nombre`, `precio`, `cantidad`, `talla`, `color` , `genero`) VALUES (?,?,?,?,?,?,?)");
+            ps = con.prepareStatement("INSERT INTO `productos`(`codigo`, "
+                    + "`nombre`, `precio`, `cantidad`, `talla`, `color` , "
+                    + "`genero`) VALUES (?,?,?,?,?,?,?)");
 
             ps.setString(1, producto.getCodigo());
             ps.setString(2, producto.getNombre());
@@ -151,27 +161,26 @@ public class Producto {
         PreparedStatement ps;
 
         try {
-            ps = con.prepareStatement("UPDATE `productos` SET  `nombre`=?, `precio`=?, `cantidad`=?, `talla`=?, `color`=?, `genero`=? WHERE `codigo` = ?");
+            ps = con.prepareStatement("UPDATE `productos` SET `nombre`=?, `precio`=?, `costo_compra`=?, `cantidad`=?, `talla`=?, `color`=?, `genero`=? WHERE `codigo` = ?");
 
             ps.setString(1, producto.getNombre());
             ps.setString(2, producto.getPrecio());
-            ps.setInt(3, producto.getCantidad());
-            ps.setString(4, producto.getTalla());
-            ps.setString(5, producto.getColor());
-            ps.setString(6, producto.getGenero());
-            ps.setString(7, producto.getCodigo());
+            ps.setDouble(3, producto.getCostoCompra());
+            ps.setInt(4, producto.getCantidad());
+            ps.setString(5, producto.getTalla());
+            ps.setString(6, producto.getColor());
+            ps.setString(7, producto.getGenero());
+            ps.setString(8, producto.getCodigo());
 
             if (ps.executeUpdate() != 0) {
-                //   JOptionPane.showMessageDialog(null, "Producto Actualizado");
+                // OK
             } else {
                 JOptionPane.showMessageDialog(null, "Algo Salio Mal");
-
             }
 
         } catch (SQLException ex) {
             Logger.getLogger(Producto.class.getName()).log(Level.SEVERE, null, ex);
         }
-
     }
 
     // Eliminar producto por id
@@ -211,9 +220,11 @@ public class Producto {
         ResultSet rs;
         PreparedStatement ps;
 
-        String query = "SELECT `id`, `codigo`, `nombre`, `precio`, `cantidad`, `talla`, `color`, `genero` "
+        String query = "SELECT `id`, `codigo`, `nombre`, `precio`, `costo_compra`, "
+                + "`cantidad`, `talla`, `color`, `genero` "
                 + "FROM `productos` "
-                + "WHERE CONCAT(`codigo`, `nombre`, `precio`, `cantidad`, `talla`, `color`, `genero`) LIKE ?";
+                + "WHERE CONCAT(`codigo`, `nombre`, `precio`, `cantidad`, `talla`, "
+                + "`color`, `genero`) LIKE ?";
 
         try {
             ps = connection.prepareStatement(query);
@@ -233,6 +244,7 @@ public class Producto {
                         rs.getString("color"),
                         rs.getString("genero")
                 );
+                prd.setCostoCompra(rs.getDouble("costo_compra"));
 
                 producto_list.add(prd);
             }

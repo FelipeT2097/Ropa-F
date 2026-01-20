@@ -135,7 +135,6 @@ public class DetalleVenta {
         }
     }
 
-
     // MÉTODOS DE NEGOCIO
     public static boolean registrarDetalleVenta(DetalleVenta detalle) {
         Connection con = null;

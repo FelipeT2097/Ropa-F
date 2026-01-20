@@ -311,8 +311,6 @@ public class Login extends javax.swing.JFrame {
             st.setString(1, nombre_usuario);
             st.setString(2, sha1);
 
-            System.out.println("Ejecutando query de autenticación...");
-
             rs = st.executeQuery();
 
             if (rs.next()) {

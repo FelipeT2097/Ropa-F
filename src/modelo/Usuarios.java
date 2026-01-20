@@ -154,11 +154,6 @@ public class Usuarios {
             ps.setString(8, usuarios.getContraseña());
             ps.setString(9, usuarios.getRol());
 
-            // DEBUG
-            System.out.println("Insertando usuario en BD...");
-            System.out.println("Contraseña a guardar: " + usuarios.getContraseña());
-            System.out.println("Longitud: " + usuarios.getContraseña().length());
-            
             if (ps.executeUpdate() != 0) {
                 JOptionPane.showMessageDialog(null, "Nuevo usuario Agregado");
             } else {

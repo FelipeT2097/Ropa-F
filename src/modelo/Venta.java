@@ -170,7 +170,8 @@ public class Venta {
 
         // Sentencia SQL para insertar una venta
         // NOW() agrega la fecha actual automáticamente
-        String query = "INSERT INTO ventas (fecha, cliente, subtotal, descuento, total, metodo_pago, estado, usuario, tipo_documento_cliente, numero_documento_cliente) "
+        String query = "INSERT INTO ventas (fecha, cliente, subtotal, descuento, total, metodo_pago, "
+                + "estado, usuario, tipo_documento_cliente, numero_documento_cliente) "
                 + "VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try {
@@ -287,9 +288,7 @@ public class Venta {
         return lista;
     }
 
-    /*Busca ventas según un texto (por ID, cliente, método de pago o estado).
-     * @return Lista con las ventas que coincidan.
-     */
+    //Busca ventas según un texto (por ID, cliente, método de pago o estado).
     public ArrayList<Venta> buscarVentas(String filtro) {
         ArrayList<Venta> lista = new ArrayList<>();
         Connection con = null;
@@ -345,9 +344,7 @@ public class Venta {
         return lista;
     }
 
-    /*Obtiene una venta específica por su ID.
-     return Objeto Venta o null si no existe.
-     */
+    //Obtiene una venta específica por su ID
     public static Venta obtenerVentaPorId(int id) {
         Venta venta = null;
         Connection con = null;
@@ -400,9 +397,7 @@ public class Venta {
         return venta;
     }
 
-    /*Cambia el estado de una venta a "ANULADA".
-    * return true si la operación fue exitosa.
-     */
+    //Cambia el estado de una venta a "ANULADA".
     public static boolean anularVenta(int ventaId) {
         Connection con = null;
         PreparedStatement ps = null;

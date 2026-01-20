@@ -22,7 +22,7 @@ import javax.swing.Timer;
  */
 public class Principal extends javax.swing.JFrame {
 
-        /**
+    /**
      * Muestra alertas como panel flotante en el desktop
      */
     private void mostrarAlertasIniciales() {
@@ -114,6 +114,14 @@ public class Principal extends javax.swing.JFrame {
         Icon iconoAuditoria = new ImageIcon(mAuditoria.getImage().getScaledInstance(20, 15, Image.SCALE_DEFAULT));
         jMenuItem_auditoria.setIcon(iconoAuditoria);
 
+        ImageIcon backup = new ImageIcon(getClass().getResource("/imagenes/backup.png"));
+        Icon iconoBackup = new ImageIcon(backup.getImage().getScaledInstance(25, 20, Image.SCALE_DEFAULT));
+        jMenu_backup.setIcon(iconoBackup);
+
+        ImageIcon  comparativa = new ImageIcon(getClass().getResource("/imagenes/analisis.png"));
+        Icon iconoComparativa = new ImageIcon(comparativa.getImage().getScaledInstance(20, 15, Image.SCALE_DEFAULT));
+        jMenuItem_comparativa.setIcon(iconoComparativa);
+        
         timer.start();
 
         // Configurar permisos según el rol
@@ -220,6 +228,9 @@ public class Principal extends javax.swing.JFrame {
 
             //Los vendedor NO pueden ver el modulo de auditoria
             jMenuItem_auditoria.setVisible(false);
+            
+            //Los vendedor NO pueden ver el modulo de backup
+            jMenu_backup.setVisible(false);
 
         } else if (sesion.esAlmacenista()) {
             // Los almacenistas NO pueden gestionar usuarios
@@ -239,6 +250,9 @@ public class Principal extends javax.swing.JFrame {
 
             //Los almacenista NO pueden ver el modulo de auditoria
             jMenuItem_auditoria.setVisible(false);
+            
+            //Los almacenistas NO pueden ver el modulo de backup
+            jMenu_backup.setVisible(false);
 
         } else if (sesion.esAdmin()) {
             //Los administradores ven TODO
@@ -247,6 +261,7 @@ public class Principal extends javax.swing.JFrame {
             jMenu_CATALOGO.setVisible(true);
             jMenu_punto_venta.setVisible(true);
             jMenu_reversiones.setVisible(true);
+            jMenu_backup.setVisible(true);
         }
     }
 
@@ -307,9 +322,13 @@ public class Principal extends javax.swing.JFrame {
         jMenuItem3 = new javax.swing.JMenuItem();
         jMenu_reversiones = new javax.swing.JMenu();
         jMenuitem4 = new javax.swing.JMenuItem();
+        jMenuItem4 = new javax.swing.JMenuItem();
         jMenu_reportes = new javax.swing.JMenu();
         jMenuItem_reportes = new javax.swing.JMenuItem();
         jMenuItem_auditoria = new javax.swing.JMenuItem();
+        jMenuItem_comparativa = new javax.swing.JMenuItem();
+        jMenu_backup = new javax.swing.JMenu();
+        jMenuItem_backup = new javax.swing.JMenuItem();
 
         jMenu1.setText("jMenu1");
 
@@ -455,13 +474,21 @@ public class Principal extends javax.swing.JFrame {
 
         jMenu_reversiones.setText("Reversiones");
 
-        jMenuitem4.setText("Reversioens y/o Anulaciones");
+        jMenuitem4.setText("Devolución Ventas");
         jMenuitem4.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jMenuitem4ActionPerformed(evt);
             }
         });
         jMenu_reversiones.add(jMenuitem4);
+
+        jMenuItem4.setText("Devolución Compras");
+        jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem4ActionPerformed(evt);
+            }
+        });
+        jMenu_reversiones.add(jMenuItem4);
 
         jMenuBar1.add(jMenu_reversiones);
 
@@ -483,7 +510,27 @@ public class Principal extends javax.swing.JFrame {
         });
         jMenu_reportes.add(jMenuItem_auditoria);
 
+        jMenuItem_comparativa.setText("Comparativas");
+        jMenuItem_comparativa.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem_comparativaActionPerformed(evt);
+            }
+        });
+        jMenu_reportes.add(jMenuItem_comparativa);
+
         jMenuBar1.add(jMenu_reportes);
+
+        jMenu_backup.setText("Respaldo");
+
+        jMenuItem_backup.setText("Backup Base de Datos");
+        jMenuItem_backup.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem_backupActionPerformed(evt);
+            }
+        });
+        jMenu_backup.add(jMenuItem_backup);
+
+        jMenuBar1.add(jMenu_backup);
 
         setJMenuBar(jMenuBar1);
 
@@ -527,7 +574,7 @@ public class Principal extends javax.swing.JFrame {
 
     private void jMenuitem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuitem4ActionPerformed
         // TODO add your handling code here:
-        FrmReversiones reversiones = new FrmReversiones();
+        FrmReversionesVentas reversiones = new FrmReversionesVentas();
         jDesktopPane_escritorio.add(reversiones);
         reversiones.show();
     }//GEN-LAST:event_jMenuitem4ActionPerformed
@@ -545,6 +592,25 @@ public class Principal extends javax.swing.JFrame {
         jDesktopPane_escritorio.add(auditoria);
         auditoria.show();
     }//GEN-LAST:event_jMenuItem_auditoriaActionPerformed
+
+    private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
+        // TODO add your handling code here:
+        FrmReversionesCompras compras = new FrmReversionesCompras();
+        jDesktopPane_escritorio.add(compras);
+        compras.show();
+    }//GEN-LAST:event_jMenuItem4ActionPerformed
+
+    private void jMenuItem_comparativaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem_comparativaActionPerformed
+        // TODO add your handling code here:
+        FrmCostos costos = new FrmCostos();
+        jDesktopPane_escritorio.add(costos);
+        costos.show();
+    }//GEN-LAST:event_jMenuItem_comparativaActionPerformed
+
+    private void jMenuItem_backupActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem_backupActionPerformed
+        // TODO add your handling code here:
+        controlador.BackupDB.realizarBackup();
+    }//GEN-LAST:event_jMenuItem_backupActionPerformed
 
     /**
      * @param args the command line arguments
@@ -595,12 +661,16 @@ public class Principal extends javax.swing.JFrame {
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem3;
+    private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem_Usuarios;
     private javax.swing.JMenuItem jMenuItem_auditoria;
+    private javax.swing.JMenuItem jMenuItem_backup;
+    private javax.swing.JMenuItem jMenuItem_comparativa;
     private javax.swing.JMenuItem jMenuItem_reportes;
     private javax.swing.JMenuItem jMenuItem_stock;
     private javax.swing.JMenu jMenu_CATALOGO;
     private javax.swing.JMenu jMenu_GUSUARIOS;
+    private javax.swing.JMenu jMenu_backup;
     private javax.swing.JMenu jMenu_gestion_clientes;
     private javax.swing.JMenu jMenu_gestion_proveedores;
     private javax.swing.JMenu jMenu_punto_venta;
@@ -610,9 +680,4 @@ public class Principal extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel1;
     public javax.swing.JLabel jlabel_usuario;
     // End of variables declaration//GEN-END:variables
-
-    /*public void setDatos (String nombre_usuario, String contraseña){
-        jlabel_usuario.setText(nombre_usuario);
-        
-        } */
 }

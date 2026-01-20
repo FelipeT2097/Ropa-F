@@ -10,7 +10,6 @@ import java.util.ArrayList;  // Para crear listas de clientes
 import java.util.logging.Level;  // Para registrar errores
 import java.util.logging.Logger;  // Para guardar mensajes de error
 import javax.swing.JOptionPane;  // Para mostrar ventanas de mensaje al usuario
-import modelo.ConexionDB;  // Nuestra clase que conecta con la base de datos
 
 /**
  *
@@ -29,13 +28,15 @@ public class Clientes {
     private String correoElectronico;
     private String direccion;
     private String ciudad;
+    private double descuentoFijo;
 
     public Clientes() {
     }
 
     public Clientes(Integer id, String nombreCompleto, String tipoDocumento,
             String numeroDocumento, String genero, String telefono,
-            String correoElectronico, String direccion, String ciudad) {
+            String correoElectronico, String direccion, String ciudad, 
+            double descuentoFijo) {
         // Asignamos cada parámetro al atributo correspondiente
         this.id = id;
         this.nombreCompleto = nombreCompleto;
@@ -46,6 +47,7 @@ public class Clientes {
         this.correoElectronico = correoElectronico;
         this.direccion = direccion;
         this.ciudad = ciudad;
+        this.descuentoFijo = descuentoFijo;
 
     }
 
@@ -120,15 +122,30 @@ public class Clientes {
     public void setCiudad(String ciudad) {
         this.ciudad = ciudad;
     }
+    
+    public double getDescuentoFijo() {
+        return descuentoFijo;
+    }
+
+    public void setDescuentoFijo(double descuentoFijo) {
+        // Validar que no sea mayor a 20%
+        if (descuentoFijo > 20) {
+            this.descuentoFijo = 20;
+        } else if (descuentoFijo < 0) {
+            this.descuentoFijo = 0;
+        } else {
+            this.descuentoFijo = descuentoFijo;
+        }
+    }
 
     public static void insertarClientes(Clientes cliente) {
 
-        Connection con = null;  // La conexión a la base de datos
-        PreparedStatement ps = null;  // La consulta SQL preparada
+        Connection con = null;  
+        PreparedStatement ps = null;  
 
         try {
 
-            con = ConexionDB.getConnection();  // Obtener la conexión
+            con = ConexionDB.getConnection();  
 
             // PreparedStatement es SEGURO contra inyección SQL
             // Los signos ? son "marcadores de posición" que llenaremos después
@@ -137,9 +154,9 @@ public class Clientes {
                     + // Insertaremos en la tabla clientes
                     "(`nombre_completo`, `tipo_documento_cliente`, `numero_documento`, "
                     + "`genero`, `telefono`, `correo_electronico`, `direccion`, "
-                    + "`ciudad`) "
+                    + "`ciudad`, `descuento_fijo`) "
                     + // Estas son las columnas
-                    "VALUES (?,?,?,?,?,?,?,?)" // Estos son los 9 valores (?)
+                    "VALUES (?,?,?,?,?,?,?,?,?)" // Estos son los 9 valores (?)
             );
 
             // Cada setString/setInt reemplaza un ? en orden
@@ -151,6 +168,7 @@ public class Clientes {
             ps.setString(6, cliente.getCorreoElectronico());
             ps.setString(7, cliente.getDireccion());
             ps.setString(8, cliente.getCiudad());
+            ps.setDouble(9, cliente.getDescuentoFijo());
 
             // executeUpdate() devuelve el número de filas afectadas
             // Si es diferente de 0, significa que SÍ insertó algo
@@ -217,7 +235,8 @@ public class Clientes {
                         rs.getString("telefono"),
                         rs.getString("correo_electronico"),
                         rs.getString("direccion"),
-                        rs.getString("ciudad")
+                        rs.getString("ciudad"),
+                        rs.getDouble("descuento_fijo")
                 );
                 clienList.add(cliente);
             }
@@ -265,6 +284,7 @@ public class Clientes {
                     + "`correo_electronico`=?, "
                     + "`direccion`=?, "
                     + "`ciudad`=?, "
+                    + "`descuento_fijo`=? " 
                     + "WHERE `id` = ?" //solo actualiza este ID
             );
 
@@ -277,6 +297,7 @@ public class Clientes {
             ps.setString(6, cliente.getCorreoElectronico());
             ps.setString(7, cliente.getDireccion());
             ps.setString(8, cliente.getCiudad());
+            ps.setDouble(9, cliente.getDescuentoFijo());
             ps.setInt(10, cliente.getId());  // El último ? es el ID (WHERE)
 
             // Ejecutar la actualización
@@ -369,6 +390,7 @@ public class Clientes {
                 cliente.setCorreoElectronico(rs.getString("correo_electronico"));
                 cliente.setDireccion(rs.getString("direccion"));
                 cliente.setCiudad(rs.getString("ciudad"));
+                cliente.setDescuentoFijo(rs.getDouble("descuento_fijo"));
             }
 
             rs.close();
@@ -381,5 +403,38 @@ public class Clientes {
 
     public Object getNombreCompelto() {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    //Método para obtener solo el descuento de un cliente
+    public static double obtenerDescuento(String numeroDocumento) {
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        double descuento = 0;
+
+        try {
+            con = ConexionDB.getConnection();
+            String sql = "SELECT descuento_fijo FROM clientes WHERE numero_documento = ?";
+            ps = con.prepareStatement(sql);
+            ps.setString(1, numeroDocumento);
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                descuento = rs.getDouble("descuento_fijo");
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al obtener descuento: " + e.getMessage());
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                if (ps != null) ps.close();
+                if (con != null) con.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return descuento;
     }
 }

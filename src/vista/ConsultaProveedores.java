@@ -13,11 +13,15 @@ import java.awt.Font;
 import java.io.InputStream;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,6 +41,9 @@ import util.Utilidad;
 public class ConsultaProveedores extends javax.swing.JInternalFrame {
 
     private ArrayList<Proveedores> proveeListCache;
+
+    private int idProveedorSeleccionado;
+    private String nombreProveedorSeleccionado;
 
     public ConsultaProveedores() {
         super("Consultas", true, true, true, true);
@@ -96,6 +103,156 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
         // Asignar el modelo a la JTable
         jTable_Proveedores.setModel(model);
         jTable_Proveedores.setRowHeight(30);
+    }
+
+    public void populateJtableHistorialProveedor(int idProveedor, String nombreProveedor) {
+        // Definir columnas para el historial
+        String[] colNames = {"Nº Factura", "Fecha", "Subtotal", "Impuesto", "Total", "Estado"};
+
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            con = modelo.ConexionDB.getConnection();
+
+            String sql = "SELECT "
+                    + "  c.numero_factura, "
+                    + "  c.fecha_compra, "
+                    + "  c.subtotal, "
+                    + "  c.impuesto, "
+                    + "  c.total, "
+                    + "  c.estado "
+                    + "FROM compras c "
+                    + "WHERE c.proveedor_id = ? "
+                    + "ORDER BY c.fecha_compra DESC";
+
+            ps = con.prepareStatement(sql);
+            ps.setInt(1, idProveedor);
+            rs = ps.executeQuery();
+
+            // Contar filas
+            int rowCount = 0;
+            while (rs.next()) {
+                rowCount++;
+            }
+
+            if (rowCount == 0) {
+                JOptionPane.showMessageDialog(this,
+                        "No hay compras registradas a este proveedor",
+                        "Sin Historial",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            // Reiniciar ResultSet
+            rs.beforeFirst();
+
+            // Crear matriz para las filas
+            Object[][] rows = new Object[rowCount][6];
+            NumberFormat formatoMoneda = NumberFormat.getCurrencyInstance(new Locale("es", "CO"));
+            SimpleDateFormat formatoFecha = new SimpleDateFormat("dd/MM/yyyy");
+
+            int i = 0;
+            while (rs.next()) {
+                rows[i][0] = rs.getString("numero_factura");
+                rows[i][1] = formatoFecha.format(rs.getTimestamp("fecha_compra"));
+                rows[i][2] = formatoMoneda.format(rs.getDouble("subtotal"));
+                rows[i][3] = formatoMoneda.format(rs.getDouble("impuesto"));
+                rows[i][4] = formatoMoneda.format(rs.getDouble("total"));
+                rows[i][5] = rs.getString("estado");
+                i++;
+            }
+
+            // Crear el modelo de la tabla
+            DefaultTableModel model = new DefaultTableModel(rows, colNames);
+
+            // Asignar el modelo a la JTable
+            jTable_Proveedores.setModel(model);
+            jTable_Proveedores.setRowHeight(30);
+
+            // Obtener resumen
+            Object[] resumen = obtenerResumenProveedor(idProveedor);
+
+            // Mostrar resumen en el título
+            this.setTitle(String.format("Historial Compras - %s | Total Compras: %d | Total Gastado: %s",
+                    nombreProveedor,
+                    resumen[0],
+                    formatoMoneda.format((Double) resumen[1])
+            ));
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null,
+                    "Error al cargar historial:\n" + ex.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            Logger.getLogger(ConsultaProveedores.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public Object[] obtenerResumenProveedor(int idProveedor) {
+        Connection con = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        Object[] resumen = {0, 0.0, "Sin compras"};
+
+        try {
+            con = modelo.ConexionDB.getConnection();
+
+            String sql = "SELECT "
+                    + "  COUNT(c.id) AS total_compras, "
+                    + "  COALESCE(SUM(c.total), 0) AS total_gastado, "
+                    + "  MAX(DATE_FORMAT(c.fecha_compra, '%d/%m/%Y')) AS ultima_compra "
+                    + "FROM compras c "
+                    + "WHERE c.proveedor_id = ? "
+                    + "AND c.estado != 'ANULADA'";
+
+            ps = con.prepareStatement(sql);
+            ps.setInt(1, idProveedor);
+            rs = ps.executeQuery();
+
+            if (rs.next()) {
+                resumen[0] = rs.getInt("total_compras");
+                resumen[1] = rs.getDouble("total_gastado");
+                String ultima = rs.getString("ultima_compra");
+                resumen[2] = (ultima != null) ? ultima : "Sin compras";
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al obtener resumen: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (ps != null) {
+                    ps.close();
+                }
+                if (con != null) {
+                    con.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return resumen;
     }
 
     public void ShowItem(int index) {
@@ -191,6 +348,7 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
         jRadioButton_EMPRESA = new javax.swing.JRadioButton();
         jButton_refrescar = new javax.swing.JButton();
         jButton_imprimir = new javax.swing.JButton();
+        jButton_historial = new javax.swing.JButton();
 
         jTextField1.setText("jTextField1");
 
@@ -345,6 +503,17 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
             }
         });
 
+        jButton_historial.setBackground(new java.awt.Color(255, 255, 255));
+        jButton_historial.setFont(new java.awt.Font("Lucida Sans", 1, 14)); // NOI18N
+        jButton_historial.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/historial.png"))); // NOI18N
+        jButton_historial.setText("Historial");
+        jButton_historial.setPreferredSize(new java.awt.Dimension(125, 38));
+        jButton_historial.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton_historialActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -401,13 +570,14 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
                         .addComponent(jButton4)
                         .addGap(18, 18, 18)
                         .addComponent(jButton5)
-                        .addGap(0, 58, Short.MAX_VALUE))
+                        .addGap(0, 64, Short.MAX_VALUE))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(582, 582, 582)
+                        .addGap(520, 520, 520)
                         .addComponent(jButton_imprimir)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(30, 30, 30)
                         .addComponent(jButton_refrescar)
-                        .addGap(221, 221, 221)))
+                        .addGap(62, 62, 62)
+                        .addComponent(jButton_historial, javax.swing.GroupLayout.PREFERRED_SIZE, 161, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -419,7 +589,7 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addComponent(jLabel7)
-                                .addGap(0, 44, Short.MAX_VALUE))
+                                .addGap(0, 0, Short.MAX_VALUE))
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                                 .addGap(0, 0, Short.MAX_VALUE)
                                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -456,10 +626,12 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
-                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jButton_refrescar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jButton_imprimir, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 13, Short.MAX_VALUE)))
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jButton_historial, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addComponent(jButton_imprimir, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jButton_refrescar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addGap(13, 13, 13)))
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton_insertar, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton1_actualizar, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -468,7 +640,7 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
                     .addComponent(jButton_siguiente, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(75, Short.MAX_VALUE))
+                .addGap(75, 75, 75))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -485,7 +657,7 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGap(30, 30, 30))
+                .addContainerGap())
         );
 
         pack();
@@ -558,7 +730,7 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
             ShowItem(pos);
         } else {
             JOptionPane.showMessageDialog(this,
-                "La lista de proveedores está vacía o no se pudo cargar.");
+                    "La lista de proveedores está vacía o no se pudo cargar.");
         }
     }//GEN-LAST:event_jButton_siguienteActionPerformed
 
@@ -609,17 +781,17 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
                 int selectedRow = jTable_Proveedores.getSelectedRow();
                 if (selectedRow == -1) {
                     JOptionPane.showMessageDialog(null,
-                        "Seleccione un proveedor para actualizar.",
-                        "Error",
-                        JOptionPane.WARNING_MESSAGE);
+                            "Seleccione un proveedor para actualizar.",
+                            "Error",
+                            JOptionPane.WARNING_MESSAGE);
                     return;
                 }
                 int idProveedor = (int) jTable_Proveedores.getValueAt(selectedRow, 0);
 
                 // Crear el objeto proveedores con los datos del formulario
                 modelo.Proveedores proveedores = new Proveedores(
-                    idProveedor, nombreCompleto, tipoId, numeroDocumento,
-                    genero, telefono, correoElectronico
+                        idProveedor, nombreCompleto, tipoId, numeroDocumento,
+                        genero, telefono, correoElectronico
                 );
 
                 // Actualizar el proveedor
@@ -630,16 +802,16 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
 
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null,
-                    "Error al actualizar el proveedor: " + e.getMessage(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+                        "Error al actualizar el proveedor: " + e.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 e.printStackTrace();
             }
         } else {
             JOptionPane.showMessageDialog(null,
-                "Por favor, complete todos los campos obligatorios.",
-                "Campos Inválidos",
-                JOptionPane.WARNING_MESSAGE);
+                    "Por favor, complete todos los campos obligatorios.",
+                    "Campos Inválidos",
+                    JOptionPane.WARNING_MESSAGE);
         }
     }//GEN-LAST:event_jButton1_actualizarActionPerformed
 
@@ -696,6 +868,42 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
     private void jRadioButton_MASCULINOActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton_MASCULINOActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_jRadioButton_MASCULINOActionPerformed
+
+    private void jButton_historialActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_historialActionPerformed
+        // TODO add your handling code here:
+        if (jButton_historial.getText().equals("Historial")) {
+            // Verificar que hay un proveedor seleccionado
+            int filaSeleccionada = jTable_Proveedores.getSelectedRow();
+
+            if (filaSeleccionada == -1) {
+                JOptionPane.showMessageDialog(this,
+                        "Por favor seleccione un proveedor de la tabla",
+                        "Aviso",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            // Obtener datos del proveedor
+            idProveedorSeleccionado = Integer.parseInt(jTable_Proveedores.getValueAt(filaSeleccionada, 0).toString());
+            nombreProveedorSeleccionado = jTable_Proveedores.getValueAt(filaSeleccionada, 1).toString();
+
+            // Cargar historial
+            populateJtableHistorialProveedor(idProveedorSeleccionado, nombreProveedorSeleccionado);
+
+            // Cambiar botón a "Volver"
+            jButton_historial.setText("Volver a Proveedores");
+            jButton_historial.setIcon(new ImageIcon(this.getClass().getResource("/imagenes/atras.png")));
+
+        } else {
+            // Volver a la vista de proveedores
+            proveeListCache = getProveeList(); // Recargar la lista
+            populateJtable(""); // O el método que uses para recargar
+            this.setTitle("Consulta Proveedores");
+
+            jButton_historial.setText("Historial");
+            jButton_historial.setIcon(new ImageIcon(this.getClass().getResource("/imagenes/historial.png")));
+        }
+    }//GEN-LAST:event_jButton_historialActionPerformed
 
     public ArrayList<Proveedores> idveeList() {
         ArrayList<Proveedores> proveeList = new ArrayList<>();
@@ -772,6 +980,7 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton_eliminar;
     private javax.swing.JButton jButton_first;
+    private javax.swing.JButton jButton_historial;
     private javax.swing.JButton jButton_imprimir;
     private javax.swing.JButton jButton_insertar;
     private javax.swing.JButton jButton_refrescar;
@@ -800,7 +1009,7 @@ public class ConsultaProveedores extends javax.swing.JInternalFrame {
     // End of variables declaration//GEN-END:variables
 
     private ArrayList<Proveedores> getProveeList() {
-        return idveeList(); 
+        return idveeList();
     }
 
 }

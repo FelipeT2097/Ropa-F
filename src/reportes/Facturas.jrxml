@@ -38,12 +38,24 @@ LEFT JOIN usuarios u ON u.nombre_usuario = v.usuario
 WHERE f.id = $P{idFactura}]]>
 	</queryString>
 	<field name="idFactura" class="java.lang.Integer"/>
-	<field name="numero_factura" class="java.lang.String"/>
-	<field name="fecha_emision" class="java.sql.Timestamp"/>
-	<field name="subtotal" class="java.math.BigDecimal"/>
-	<field name="descuento" class="java.math.BigDecimal"/>
-	<field name="total" class="java.math.BigDecimal"/>
-	<field name="metodo_pago" class="java.lang.String"/>
+	<field name="numero_factura" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="fecha_emision" class="java.sql.Timestamp">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="subtotal" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="descuento" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="total" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="metodo_pago" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
 	<field name="nombreCliente" class="java.lang.String"/>
 	<field name="correoCliente" class="java.lang.String"/>
 	<field name="direccionCliente" class="java.lang.String"/>
@@ -51,10 +63,18 @@ WHERE f.id = $P{idFactura}]]>
 	<field name="cufeFactura" class="java.lang.String"/>
 	<field name="nombreVendedor" class="java.lang.String"/>
 	<field name="idVenta" class="java.lang.Integer"/>
-	<field name="codigo_producto" class="java.lang.String"/>
-	<field name="nombre_producto" class="java.lang.String"/>
-	<field name="cantidad" class="java.lang.Integer"/>
-	<field name="precio_unitario" class="java.math.BigDecimal"/>
+	<field name="codigo_producto" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="nombre_producto" class="java.lang.String">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="cantidad" class="java.lang.Integer">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
+	<field name="precio_unitario" class="java.math.BigDecimal">
+		<fieldDescription><![CDATA[]]></fieldDescription>
+	</field>
 	<field name="iva" class="java.lang.Double"/>
 	<field name="totalDetalle" class="java.math.BigDecimal"/>
 	<background>

@@ -23,17 +23,17 @@ public class ConexionDB {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             con = DriverManager.getConnection(
-                    "jdbc:mysql://localhost:33065/" + dbname + "?useSSL=false&serverTimezone=UTC",
+                    "jdbc:mysql://localhost:3306/" + dbname + "?useSSL=false&serverTimezone=UTC",
                     username,
                     password
             );
-            System.out.println("connected");
         } catch (Exception e) {
             e.printStackTrace();
         }
         return con;
     }
 
+    
     public static void closeConnection(Connection con) {
         if (con != null) {
             try {

@@ -38,7 +38,6 @@ public class RegistrarVentas {
 
         try {
 
-            //VALIDACIONES COMPLETAS
             //Validar que hay productos
             if (vista.getCantidadProductos() == 0) {
                 mensaje("Debe agregar productos a la venta");
@@ -71,11 +70,7 @@ public class RegistrarVentas {
             }
 
             // Validar descuento (puede ser 0)
-            String descuentoTexto = vista.getDescuentoTexto();
-            double descuento = 0;
-            if (descuentoTexto != null && !descuentoTexto.isEmpty()) {
-                descuento = getDouble(descuentoTexto);
-            }
+            double descuento = vista.getValorDescuento();
 
             // Validar total
             String totalTexto = vista.getTotalTexto();
@@ -208,7 +203,6 @@ public class RegistrarVentas {
                         ventaId,
                         total
                 );
-                System.out.println("✅Venta registrada en auditoría: ID=" + ventaId + ", Total=$" + total);
             } catch (Exception e) {
                 System.err.println("Error al registrar venta en auditoría: " + e.getMessage());
                 // No interrumpir el flujo si falla la auditoría
@@ -414,10 +408,6 @@ public class RegistrarVentas {
                     int stockActual = rsStock.getInt("cantidad");
                     String nombreProducto = rsStock.getString("nombre");
 
-                    System.out.println("Producto: " + nombreProducto);
-                    System.out.println("Stock actual: " + stockActual);
-                    System.out.println("Cantidad a vender: " + cantidad);
-
                     if (stockActual < cantidad) {
                         rsStock.close();
                         throw new SQLException(
@@ -426,7 +416,6 @@ public class RegistrarVentas {
                                 + "Cantidad solicitada: " + cantidad
                         );
                     }
-                    System.out.println("Stock suficiente");
                 }
                 rsStock.close();
 
@@ -441,7 +430,6 @@ public class RegistrarVentas {
                 psDetalle.setDouble(8, iva);
                 psDetalle.setDouble(9, totalConIva);
                 psDetalle.executeUpdate();
-                System.out.println("Detalle insertado");
 
                 // Actualizar stock
                 psStock.setInt(1, cantidad);
@@ -454,13 +442,11 @@ public class RegistrarVentas {
                     ResultSet rsNuevo = psVerificar.executeQuery();
                     if (rsNuevo.next()) {
                         int nuevoStock = rsNuevo.getInt("cantidad");
-                        System.out.println("Stock actualizado (nuevo: " + nuevoStock + ")");
                     }
                     rsNuevo.close();
                 } else {
                     throw new SQLException("No se pudo actualizar el stock del producto: " + nombre);
                 }
-                System.out.println();
             }
 
             return productosActualizados;
@@ -493,10 +479,10 @@ public class RegistrarVentas {
         ResultSet rsId = null;
 
         try {
-            //OBTENER DATOS REALES DE LA VENTA
+            // PASO 1: OBTENER DATOS REALES DE LA VENTA Y CLIENTE
             String sqlVenta = "SELECT v.cliente, v.subtotal, v.descuento, v.total, v.metodo_pago, "
                     + "v.numero_documento_cliente, "
-                    + "c.nombre_completo, c.tipo_documento_cliente, c.numero_documento, "
+                    + "c.id AS cliente_id, c.nombre_completo, c.tipo_documento_cliente, c.numero_documento, "
                     + "c.correo_electronico, c.direccion, c.telefono, c.ciudad "
                     + "FROM ventas v "
                     + "LEFT JOIN clientes c ON c.numero_documento = v.numero_documento_cliente "
@@ -518,6 +504,7 @@ public class RegistrarVentas {
             double descuento = 0.0;
             double total = 0.0;
             String metodoPago = "Efectivo";
+            Integer clienteId = null;  // ← NUEVO: puede ser NULL
 
             if (rsVenta.next()) {
                 String clienteVenta = rsVenta.getString("cliente");
@@ -526,6 +513,12 @@ public class RegistrarVentas {
                 total = rsVenta.getDouble("total");
                 metodoPago = rsVenta.getString("metodo_pago");
                 String numeroDocumentoVenta = rsVenta.getString("numero_documento_cliente");
+
+                //Obtener cliente_id
+                int cId = rsVenta.getInt("cliente_id");
+                if (!rsVenta.wasNull()) {
+                    clienteId = cId;
+                }
 
                 String nombreCompletoCliente = rsVenta.getString("nombre_completo");
                 String tipoDocCliente = rsVenta.getString("tipo_documento_cliente");
@@ -571,7 +564,7 @@ public class RegistrarVentas {
                 throw new SQLException("No se encontró la venta ID: " + ventaId);
             }
 
-            //OBTENER CONFIGURACIÓN DE LA EMPRESA
+            // PASO 2: OBTENER CONFIGURACIÓN DE LA EMPRESA
             String sqlConfig = "SELECT nit_empresa, clave_tecnica_dian, ambiente_operacion "
                     + "FROM configuracion_facturacion LIMIT 1";
             psConfig = con.prepareStatement(sqlConfig);
@@ -590,49 +583,70 @@ public class RegistrarVentas {
             rsConfig.close();
             psConfig.close();
 
-            //CALCULAR IVA Y PREPARAR DATOS
+            // PASO 3: CALCULAR IVA Y PREPARAR DATOS
             double baseIva = subtotal - descuento;
             double porcentajeIva = 19.0;
             double valorIva = baseIva * 0.19;
 
             String prefijo = "FACT";
 
-            // 4. INSERTAR FACTURA TEMPORALMENTE
+            // ← NUEVO: Determinar estado_pago según método de pago
+            String estadoPago = "pendiente";
+            if (metodoPago != null
+                    && (metodoPago.equalsIgnoreCase("Efectivo")
+                    || metodoPago.contains("Tarjeta")
+                    || metodoPago.contains("Débito")
+                    || metodoPago.contains("Crédito"))) {
+                estadoPago = "pagado";
+            }
+
+            // PASO 4: INSERTAR FACTURA (con fecha_vencimiento y cliente_id)
             String sqlFactura
                     = "INSERT INTO factura("
                     + "numero_factura, cufe, prefijo, consecutivo, venta_id, "
-                    + "fecha_emision, nombre_cliente, "
+                    + "fecha_emision, fecha_vencimiento, cliente_id, nombre_cliente, " // ← AGREGADOS
                     + "tipo_documento_cliente, numero_documento, "
                     + "telefono, correo_electronico, "
                     + "direccion_facturacion, ciudad, "
                     + "subtotal, descuento, base_iva, porcentaje_iva, valor_iva, "
                     + "otros_impuestos, total, "
                     + "metodo_pago, estado_pago, estado_dian, estado, usuario_creacion"
-                    + ") VALUES ('TEMP', 'TEMP', ?, 0, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    + ") VALUES ('TEMP', 'TEMP', ?, 0, ?, NOW(), "
+                    + "DATE_ADD(NOW(), INTERVAL 30 DAY), ?, ?, " // ← fecha_vencimiento = NOW() + 30 días, cliente_id
+                    + "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             psFactura = con.prepareStatement(sqlFactura, Statement.RETURN_GENERATED_KEYS);
 
-            psFactura.setString(1, prefijo);
-            psFactura.setInt(2, ventaId);
-            psFactura.setString(3, nombreCliente);
-            psFactura.setString(4, tipoDocumento);
-            psFactura.setString(5, numeroDocumento);
-            psFactura.setString(6, telefonoCliente);
-            psFactura.setString(7, correoCliente);
-            psFactura.setString(8, direccionCliente);
-            psFactura.setString(9, ciudadCliente);
-            psFactura.setDouble(10, subtotal);
-            psFactura.setDouble(11, descuento);
-            psFactura.setDouble(12, baseIva);
-            psFactura.setDouble(13, porcentajeIva);
-            psFactura.setDouble(14, valorIva);
-            psFactura.setDouble(15, 0.0);
-            psFactura.setDouble(16, total);
-            psFactura.setString(17, metodoPago);
-            psFactura.setString(18, "pendiente");
-            psFactura.setString(19, "no_enviado");
-            psFactura.setString(20, "activa");
-            psFactura.setString(21, usuario);
+            int paramIndex = 1;
+            psFactura.setString(paramIndex++, prefijo);           // 1. prefijo
+            psFactura.setInt(paramIndex++, ventaId);              // 2. venta_id
+
+            // 3. cliente_id 
+            if (clienteId != null) {
+                psFactura.setInt(paramIndex++, clienteId);
+            } else {
+                psFactura.setNull(paramIndex++, java.sql.Types.INTEGER);
+            }
+
+            psFactura.setString(paramIndex++, nombreCliente);
+            psFactura.setString(paramIndex++, tipoDocumento);
+            psFactura.setString(paramIndex++, numeroDocumento);
+            psFactura.setString(paramIndex++, telefonoCliente);
+            psFactura.setString(paramIndex++, correoCliente);
+            psFactura.setString(paramIndex++, direccionCliente);
+            psFactura.setString(paramIndex++, ciudadCliente);
+            psFactura.setDouble(paramIndex++, subtotal);
+            psFactura.setDouble(paramIndex++, descuento);
+            psFactura.setDouble(paramIndex++, baseIva);
+            psFactura.setDouble(paramIndex++, porcentajeIva);
+            psFactura.setDouble(paramIndex++, valorIva);
+            psFactura.setDouble(paramIndex++, 0.0);
+            psFactura.setDouble(paramIndex++, total);
+            psFactura.setString(paramIndex++, metodoPago);
+            psFactura.setString(paramIndex++, estadoPago);
+            psFactura.setString(paramIndex++, "no_enviado");
+            psFactura.setString(paramIndex++, "activa");
+            psFactura.setString(paramIndex++, usuario);
 
             int filas = psFactura.executeUpdate();
 
@@ -650,7 +664,7 @@ public class RegistrarVentas {
                 throw new SQLException("No se obtuvo el ID de la factura");
             }
 
-            //GENERAR CUFE
+            // PASO 5: GENERAR CUFE Y ACTUALIZAR FACTURA
             String numeroFactura = prefijo + "-" + String.format("%06d", facturaId);
 
             // Obtener fecha actual para el CUFE
@@ -668,7 +682,7 @@ public class RegistrarVentas {
                     claveTecnica
             );
 
-            //ACTUALIZAR FACTURA CON CUFE Y NÚMERO REAL
+            // ACTUALIZAR FACTURA CON CUFE Y NÚMERO REAL
             PreparedStatement psUpdate = con.prepareStatement(
                     "UPDATE factura SET numero_factura = ?, consecutivo = ?, cufe = ? WHERE id = ?"
             );

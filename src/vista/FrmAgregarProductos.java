@@ -13,12 +13,11 @@ import modelo.Usuario_Sesion;
  * @author piper
  */
 public class FrmAgregarProductos extends javax.swing.JFrame {
+
     private java.util.HashMap<Integer, String> mapaProveedores = new java.util.HashMap<>();
     public Integer productoId;
 
     // Variables para manejo de proveedores
-    
-
     /**
      * Obtiene el ID del proveedor por su nombre
      */
@@ -29,6 +28,62 @@ public class FrmAgregarProductos extends javax.swing.JFrame {
             }
         }
         return null;
+    }
+
+    /**
+     * Verifica el stock del producto después de la compra
+     */
+    private void verificarStockDespuesDeCompra(Integer productoId, String codigo) {
+        java.sql.Connection conn = null;
+        java.sql.PreparedStatement pst = null;
+        java.sql.ResultSet rs = null;
+
+        try {
+            // Nueva conexión independiente
+            conn = modelo.ConexionDB.getConnection();
+
+            String sql = "SELECT id, codigo, nombre, cantidad FROM productos WHERE id = ?";
+            pst = conn.prepareStatement(sql);
+            pst.setInt(1, productoId);
+            rs = pst.executeQuery();
+
+            if (rs.next()) {
+                int cantidadEnBD = rs.getInt("cantidad");
+                System.out.println("Producto encontrado en BD:");
+                System.out.println("ID: " + rs.getInt("id"));
+                System.out.println("Código: " + rs.getString("codigo"));
+                System.out.println("Nombre: " + rs.getString("nombre"));
+                System.out.println("CANTIDAD EN BD: " + cantidadEnBD);
+
+                if (cantidadEnBD == 0) {
+                    System.err.println("\n ROBLEMA DETECTADO ");
+                    System.err.println("  El producto está en BD pero la cantidad es 0");
+                    System.err.println("  Esto significa que el UPDATE no se está guardando");
+                } else {
+                    System.out.println("Stock actualizado correctamente en BD");
+                }
+            } else {
+                System.err.println("ERROR: Producto no encontrado en BD");
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error al verificar stock: " + e.getMessage());
+            e.printStackTrace();
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pst != null) {
+                    pst.close();
+                }
+                if (conn != null) {
+                    conn.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -72,81 +127,119 @@ public class FrmAgregarProductos extends javax.swing.JFrame {
         return null;
     }
 
-    /**
-     * Registra la compra en la base de datos (transacción completa)
-     *
-     * @return ID de la compra creada o -1 si falla
-     */
-    private int registrarCompraEnBD(String numeroFactura, Integer proveedorId,
-            String proveedorNombre, String fechaCompra,
-            double total, Integer productoId, String codigoProducto,
-            String nombreProducto, int cantidad, double precioCompra,
-            String observaciones) {
+    private int registrarCompra(String codigo, String nombre, String precioVenta, String talla, String color, 
+            String genero,String numeroFactura, Integer proveedorId,String proveedorNombre, String fechaCompra,
+            double subtotal, double impuesto, double totalCompra,int cantidad, double precioCompra, String observaciones) {
+
         java.sql.Connection conn = null;
         java.sql.PreparedStatement pst = null;
         java.sql.ResultSet rs = null;
+        int compraId = -1;
+        Integer productoIdLocal = null;
 
         try {
             conn = modelo.ConexionDB.getConnection();
-            conn.setAutoCommit(false); // Iniciar transacción
+            conn.setAutoCommit(false); // INICIO TRANSACCIÓN
 
-            // 1. Insertar compra (cabecera)
-            String sqlCompra = "INSERT INTO compras (numero_factura, proveedor_id, proveedor_nombre, "
+            // 1. VERIFICAR SI EL PRODUCTO EXISTE
+            String sqlBuscar = "SELECT id FROM productos WHERE codigo = ?";
+            pst = conn.prepareStatement(sqlBuscar);
+            pst.setString(1, codigo);
+            rs = pst.executeQuery();
+
+            if (rs.next()) {
+                productoIdLocal = rs.getInt("id");
+            }
+            rs.close();
+
+            // 2. CREAR PRODUCTO SI NO EXISTE
+            if (productoIdLocal == null) {
+                String sqlInsertProducto
+                        = "INSERT INTO productos (codigo, nombre, precio, cantidad, talla, color, genero) "
+                        + "VALUES (?, ?, ?, 0, ?, ?, ?)";
+
+                pst = conn.prepareStatement(sqlInsertProducto, java.sql.Statement.RETURN_GENERATED_KEYS);
+                pst.setString(1, codigo);
+                pst.setString(2, nombre);
+                pst.setString(3, precioVenta);
+                pst.setString(4, talla);
+                pst.setString(5, color);
+                pst.setString(6, genero);
+
+                if (pst.executeUpdate() == 0) {
+                    throw new Exception("No se pudo crear el producto");
+                }
+
+                rs = pst.getGeneratedKeys();
+                if (rs.next()) {
+                    productoIdLocal = rs.getInt(1);
+                } else {
+                    throw new Exception("No se generó ID del producto");
+                }
+                rs.close();
+            }
+
+            // 3. INSERTAR COMPRA (CABECERA)
+            String sqlCompra
+                    = "INSERT INTO compras (numero_factura, proveedor_id, proveedor_nombre, "
                     + "fecha_compra, subtotal, impuesto, total, estado, observaciones, usuario) "
-                    + "VALUES (?, ?, ?, ?, ?, 0, ?, 'COMPLETADA', ?, ?)";
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, 'COMPLETADA', ?, ?)";
 
             pst = conn.prepareStatement(sqlCompra, java.sql.Statement.RETURN_GENERATED_KEYS);
             pst.setString(1, numeroFactura);
             pst.setInt(2, proveedorId);
             pst.setString(3, proveedorNombre);
             pst.setString(4, fechaCompra);
-            pst.setDouble(5, total);
-            pst.setDouble(6, total);
-            pst.setString(7, observaciones);
-            pst.setString(8, Usuario_Sesion.getInstancia().getNombreUsuario());
+            pst.setDouble(5, subtotal);
+            pst.setDouble(6, impuesto);
+            pst.setDouble(7, totalCompra);
+            pst.setString(8, observaciones);
+            pst.setString(9, Usuario_Sesion.getInstancia().getNombreUsuario());
 
-            int filasAfectadas = pst.executeUpdate();
+            pst.executeUpdate();
 
-            if (filasAfectadas == 0) {
-                conn.rollback();
-                return -1;
-            }
-
-            // Obtener ID de la compra
             rs = pst.getGeneratedKeys();
-            int compraId = -1;
             if (rs.next()) {
                 compraId = rs.getInt(1);
+            } else {
+                throw new Exception("No se generó ID de compra");
             }
+            rs.close();
 
-            if (compraId == -1) {
-                conn.rollback();
-                return -1;
-            }
-
-            // 2. Insertar detalle de compra
-            String sqlDetalle = "INSERT INTO detalle_compras (compra_id, producto_id, codigo_producto, "
+            // 4. INSERTAR DETALLE DE COMPRA
+            String sqlDetalle
+                    = "INSERT INTO detalle_compras (compra_id, producto_id, codigo_producto, "
                     + "nombre_producto, cantidad, precio_compra, subtotal) "
                     + "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
             pst = conn.prepareStatement(sqlDetalle);
             pst.setInt(1, compraId);
-            pst.setInt(2, productoId);
-            pst.setString(3, codigoProducto);
-            pst.setString(4, nombreProducto);
+            pst.setInt(2, productoIdLocal);
+            pst.setString(3, codigo);
+            pst.setString(4, nombre);
             pst.setInt(5, cantidad);
             pst.setDouble(6, precioCompra);
-            pst.setDouble(7, total);
+            pst.setDouble(7, totalCompra);
 
             pst.executeUpdate();
 
-            conn.commit(); // Confirmar transacción
-            System.out.println("Compra registrada con ID: " + compraId);
+            // 5. ACTUALIZAR STOCK
+            String sqlUpdateStock
+                    = "UPDATE productos SET cantidad = cantidad + ? WHERE id = ?";
+
+            pst = conn.prepareStatement(sqlUpdateStock);
+            pst.setInt(1, cantidad);
+            pst.setInt(2, productoIdLocal);
+
+            if (pst.executeUpdate() == 0) {
+                throw new Exception("No se actualizó el stock");
+            }
+
+            // 6. COMMIT
+            conn.commit();
             return compraId;
 
         } catch (Exception e) {
-            System.err.println("Error al registrar compra: " + e.getMessage());
-            e.printStackTrace();
             try {
                 if (conn != null) {
                     conn.rollback();
@@ -155,6 +248,7 @@ public class FrmAgregarProductos extends javax.swing.JFrame {
                 ex.printStackTrace();
             }
             return -1;
+
         } finally {
             try {
                 if (rs != null) {
@@ -165,43 +259,6 @@ public class FrmAgregarProductos extends javax.swing.JFrame {
                 }
                 if (conn != null) {
                     conn.setAutoCommit(true);
-                    conn.close();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    /**
-     * Actualiza el stock y precio de compra del producto
-     */
-    private boolean actualizarStockProducto(Integer productoId, int cantidad, double precioCompra) {
-        java.sql.Connection conn = null;
-        java.sql.PreparedStatement pst = null;
-
-        try {
-            conn = modelo.ConexionDB.getConnection();
-            String sql = "UPDATE productos SET cantidad = cantidad + ?, precio_compra = ? WHERE id = ?";
-            pst = conn.prepareStatement(sql);
-            pst.setInt(1, cantidad);
-            pst.setDouble(2, precioCompra);
-            pst.setInt(3, productoId);
-
-            int filasAfectadas = pst.executeUpdate();
-            System.out.println("Stock actualizado. Producto ID: " + productoId + " | Cantidad agregada: " + cantidad);
-            return filasAfectadas > 0;
-
-        } catch (Exception e) {
-            System.err.println("Error al actualizar stock: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        } finally {
-            try {
-                if (pst != null) {
-                    pst.close();
-                }
-                if (conn != null) {
                     conn.close();
                 }
             } catch (Exception e) {
@@ -288,9 +345,6 @@ public class FrmAgregarProductos extends javax.swing.JFrame {
                 mapaProveedores.put(id, nombrePorveedor);
                 jComboBox_proveedores.addItem(nombrePorveedor);
             }
-
-            System.out.println("Proveedores cargados: " + mapaProveedores.size());
-
         } catch (Exception e) {
             System.err.println("Error al cargar proveedores: " + e.getMessage());
             e.printStackTrace();
@@ -608,145 +662,88 @@ public class FrmAgregarProductos extends javax.swing.JFrame {
 
     private void btnAgregarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAgregarActionPerformed
         // TODO add your handling code here:
-       
-        // VALIDAR TODOS LOS CAMPOS
-         if (!verifFields()) {
-            return; // Si hay errores, salir
-        }
-        // OBTENER DATOS DEL FORMULARIO
-        // Datos del producto
-        String codigo = jTextField_codigo.getText().trim();
-        String nombre = jTextField_nombre_producto.getText().trim();
-        String precioVenta = jTextField_precio.getText().trim();
-        String talla = jTextField_talla.getText().trim();
-        String color = jTextField_color.getText().trim();
-        String genero = (String) jComboBox_genero.getSelectedItem();
+            // VALIDAR TODOS LOS CAMPOS
+    if (!verifFields()) {
+        return;
+    }
 
-        // Datos de la compra
-        String proveedorNombre = (String) jComboBox_proveedores.getSelectedItem();
-        Integer proveedorId = obtenerProveedorId(proveedorNombre);
-        String numeroFactura = jTextField_numero_factura.getText().trim();
-        java.util.Date fechaDate = jDateChooser_fecha_compra.getDate();
-        String observaciones = jTextArea_observaciones.getText().trim();
+    // DATOS DEL PRODUCTO
+    String codigo = jTextField_codigo.getText().trim();
+    String nombre = jTextField_nombre_producto.getText().trim();
+    String precioVenta = jTextField_precio.getText().trim();
+    String talla = jTextField_talla.getText().trim();
+    String color = jTextField_color.getText().trim();
+    String genero = (String) jComboBox_genero.getSelectedItem();
 
-        // Convertir valores numéricos
-        int cantidad = Integer.parseInt(jTextField_cantidad.getText().trim());
-        double precioCompra = Double.parseDouble(jTextField_precio.getText().trim());
-        double totalCompra = cantidad * precioCompra;
+    // DATOS DE LA COMPRA
+    String proveedorNombre = (String) jComboBox_proveedores.getSelectedItem();
+    Integer proveedorId = obtenerProveedorId(proveedorNombre);
+    String numeroFactura = jTextField_numero_factura.getText().trim();
+    java.util.Date fechaDate = jDateChooser_fecha_compra.getDate();
+    String observaciones = jTextArea_observaciones.getText().trim();
 
-        // Convertir fecha a String formato SQL
-        String fechaCompra = convertirFechaASQL(fechaDate);
+    // CONVERSIÓN DE VALORES NUMÉRICOS
+    int cantidad = Integer.parseInt(jTextField_cantidad.getText().trim());
+    double precioCompra = Double.parseDouble(jTextField_precio.getText().trim());
+    double subtotal = cantidad * precioCompra;
+    double impuesto = subtotal * 0.19;
+    double totalCompra = subtotal + impuesto;
 
-        // PASO 1: VERIFICAR SI EL PRODUCTO YA EXISTE
-        Integer productoId = buscarProductoPorCodigo(codigo);
+    // FECHA FORMATO SQL
+    String fechaCompra = convertirFechaASQL(fechaDate);
 
-        if (productoId == null) {
-            // El producto NO existe → Crearlo primero
-            System.out.println("Producto no existe. Creando producto: " + codigo);
+    // REGISTRAR COMPRA (TRANSACCIÓN ÚNICA)
+    int compraId = registrarCompra(
+            codigo, nombre, precioVenta, talla, color, genero,
+            numeroFactura, proveedorId, proveedorNombre, fechaCompra,
+            subtotal, impuesto, totalCompra, cantidad, precioCompra, observaciones
+    );
 
-            modelo.Producto producto = new modelo.Producto(
-                    null, codigo, nombre, precioVenta, 0, talla, color, genero
-            );
-
-            try {
-                // Intentar insertar el producto
-                modelo.Producto.insertarProducto(producto);
-
-                System.out.println("Producto creado: " + codigo);
-
-            } catch (Exception e) {
-                System.err.println("Error al crear producto: " + e.getMessage());
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Error al crear el producto en el catálogo.\n" + e.getMessage(),
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-                return;
-            }
-
-            // Obtener el ID del producto recién creado
-            productoId = buscarProductoPorCodigo(codigo);
-
-            if (productoId == null) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        "Error al obtener el ID del producto creado.",
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-                return;
-            }
-
-            System.out.println("Producto creado con ID: " + productoId);
-        } else {
-            System.out.println("Producto ya existe con ID: " + productoId);
-        }
-
-        // PASO 2: REGISTRAR LA COMPRA EN LA BD
-        int compraId = registrarCompraEnBD(
-                numeroFactura, proveedorId, proveedorNombre, fechaCompra,
-                totalCompra, productoId, codigo, nombre, cantidad,
-                precioCompra, observaciones
-        );
-
-        if (compraId == -1) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error al registrar la compra.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
-            return;
-        }
-
-        // PASO 3: ACTUALIZAR STOCK DEL PRODUCTO
-        boolean stockActualizado = actualizarStockProducto(productoId, cantidad, precioCompra);
-
-        if (!stockActualizado) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "La compra se registró pero hubo un error al actualizar el stock.",
-                    "Advertencia",
-                    JOptionPane.WARNING_MESSAGE
-            );
-        }
-
-        // PASO 4: REGISTRAR EN AUDITORÍA
-        try {
-            Auditoria auditoria = new Auditoria();
-            auditoria.registrar(
-                    Usuario_Sesion.getInstancia().getNombreUsuario(),
-                    "CREAR",
-                    "Compras",
-                    "Registró compra - Factura: " + numeroFactura
-                    + " | Producto: " + codigo + " - " + nombre
-                    + " | Cantidad: " + cantidad
-                    + " | Precio compra: $" + String.format("%,.0f", precioCompra)
-                    + " | Total: $" + String.format("%,.0f", totalCompra)
-                    + " | Proveedor: " + proveedorNombre
-            );
-            System.out.println("Compra registrada en auditoría");
-        } catch (Exception e) {
-            System.err.println("Error al registrar en auditoría: " + e.getMessage());
-        }
-
-        // MOSTRAR MENSAJE DE ÉXITO
+    if (compraId == -1) {
         JOptionPane.showMessageDialog(
                 this,
-                "✓ COMPRA REGISTRADA EXITOSAMENTE\n\n"
-                + "Factura: " + numeroFactura + "\n"
-                + "Proveedor: " + proveedorNombre + "\n"
-                + "Producto: " + nombre + " (" + codigo + ")\n"
-                + "Talla: " + talla + " | Color: " + color + "\n"
-                + "Cantidad: " + cantidad + " unidades\n"
-                + "Precio compra: $" + String.format("%,.0f", precioCompra) + "\n"
-                + "Total: $" + String.format("%,.0f", totalCompra) + "\n\n"
-                + "Stock actualizado en inventario",
-                "Compra Exitosa",
-                JOptionPane.INFORMATION_MESSAGE
+                "Error al registrar la compra.",
+                "Error",
+                JOptionPane.ERROR_MESSAGE
         );
-        limpiarCampos();
+        return;
+    }
+
+    // REGISTRAR AUDITORÍA
+    try {
+        Auditoria auditoria = new Auditoria();
+        auditoria.registrar(
+                Usuario_Sesion.getInstancia().getNombreUsuario(),
+                "CREAR",
+                "Compras",
+                "Registró compra - Factura: " + numeroFactura
+                + " | Producto: " + codigo + " - " + nombre
+                + " | Cantidad: " + cantidad
+                + " | Precio compra: $" + String.format("%,.0f", precioCompra)
+                + " | Total: $" + String.format("%,.0f", totalCompra)
+                + " | Proveedor: " + proveedorNombre
+        );
+    } catch (Exception e) {
+        // opcional: log silencioso o manejo interno
+    }
+
+    // MENSAJE DE ÉXITO
+    JOptionPane.showMessageDialog(
+            this,
+            "✓ COMPRA REGISTRADA EXITOSAMENTE\n\n"
+            + "Factura: " + numeroFactura + "\n"
+            + "Proveedor: " + proveedorNombre + "\n"
+            + "Producto: " + nombre + " (" + codigo + ")\n"
+            + "Talla: " + talla + " | Color: " + color + "\n"
+            + "Cantidad: " + cantidad + " unidades\n"
+            + "Precio compra: $" + String.format("%,.0f", precioCompra) + "\n"
+            + "Total: $" + String.format("%,.0f", totalCompra) + "\n\n"
+            + "Stock actualizado en inventario",
+            "Compra Exitosa",
+            JOptionPane.INFORMATION_MESSAGE
+    );
+
+    limpiarCampos();
     }//GEN-LAST:event_btnAgregarActionPerformed
 
     private void jButton_cancelarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_cancelarActionPerformed
@@ -766,14 +763,21 @@ public class FrmAgregarProductos extends javax.swing.JFrame {
                 || jComboBox_proveedores.getSelectedItem() == null || jTextArea_observaciones.getText().equals("")) {
             JOptionPane.showMessageDialog(null, "Uno o más campos están vacíos", "Campos vacíos", 0);
             return false;
-        } else {
-            try {
-                String.valueOf(jTextField_precio.getText());
-                return true;
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(null, ex.getMessage(), "Valores Invalidos", 0);
-                return false;
-            }
+        }
+
+        // Validar que se seleccionó un proveedor válido
+        String proveedorSeleccionado = (String) jComboBox_proveedores.getSelectedItem();
+        if (proveedorSeleccionado.equals("Seleccione un proveedor...")) {
+            JOptionPane.showMessageDialog(null, "Debe seleccionar un proveedor", "Proveedor no seleccionado", 0);
+            return false;
+        }
+
+        try {
+            String.valueOf(jTextField_precio.getText());
+            return true;
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(null, ex.getMessage(), "Valores Invalidos", 0);
+            return false;
         }
     }
 

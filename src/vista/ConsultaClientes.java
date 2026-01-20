@@ -6,18 +6,21 @@ package vista;
 
 import controlador.Auditoria;
 import modelo.Clientes;
-import modelo.Proveedores;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,7 +40,10 @@ import util.Utilidad;
 public class ConsultaClientes extends javax.swing.JInternalFrame {
 
     private ArrayList<Clientes> clienListCache;
-
+    
+    private int idClienteSeleccionado;
+private String nombreClienteSeleccionado;
+    
     public ConsultaClientes() {
         super("Consultas", true, true, true, true);
         initComponents();
@@ -65,7 +71,6 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
                     "Clientes",
                     "Accedió al módulo de Clientes"
             );
-            System.out.println("Acceso a ConsultaClientes registrado");
         } catch (Exception e) {
             System.err.println("Error al registrar acceso: " + e.getMessage());
         }
@@ -79,7 +84,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         jTextField2_correo.setText("");
         jTextField3_direccion.setText("");
         jTextField4_ciudad.setText("");
-
+        jTextField_descuento.setText("0");
     }
 
     public static ConsultaClientes ventanaPrincipal;
@@ -90,10 +95,10 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
 
         // proveeListCache = getProveeList();
         // Definir las columnas de la tabla
-        String[] colNames = {"ID", "Nombre Completo", "Tipo ID", "Documento", "Genero", "Telefono", "Correo", "Direccion", "Ciudad"};
+        String[] colNames = {"ID", "Nombre Completo", "Tipo ID", "Documento", "Genero", "Telefono", "Correo", "Direccion", "Ciudad", "Descuento"};
 
         // Crear una matriz para almacenar las filas de la tabla
-        Object[][] rows = new Object[clienListCache.size()][9];
+        Object[][] rows = new Object[clienListCache.size()][10];
 
         // Rellenar la matriz con los datos de la lista de proveedores
         for (int i = 0; i < clienListCache.size(); i++) {
@@ -106,6 +111,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
             rows[i][6] = clienListCache.get(i).getCorreoElectronico();
             rows[i][7] = clienListCache.get(i).getDireccion();
             rows[i][8] = clienListCache.get(i).getCiudad();
+            rows[i][9] = clienListCache.get(i).getDescuentoFijo() + "%";
         }
 
         // Crear el modelo de la tabla con los datos y las columnas
@@ -115,6 +121,191 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         jTable_Clientes.setModel(model);
         jTable_Clientes.setRowHeight(30);
     }
+
+    public void populateJtableHistorial(int idCliente, String nombreCliente) {
+    // Definir columnas para el historial
+    String[] colNames = {"Nº Factura", "Fecha", "Subtotal", "Descuento", "IVA", "Total", "Método Pago", "Estado"};
+    
+    Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    
+    try {
+        con = modelo.ConexionDB.getConnection();
+        
+        // Primero obtener el numero_documento del cliente
+        String sqlDoc = "SELECT numero_documento FROM clientes WHERE id = ?";
+        PreparedStatement psDoc = con.prepareStatement(sqlDoc);
+        psDoc.setInt(1, idCliente);
+        ResultSet rsDoc = psDoc.executeQuery();
+        
+        String numeroDocumento = "";
+        if (rsDoc.next()) {
+            numeroDocumento = rsDoc.getString("numero_documento");
+        }
+        rsDoc.close();
+        psDoc.close();
+        
+        if (numeroDocumento.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "No se pudo obtener el documento del cliente",
+                "Error",
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Ahora buscar las ventas y facturas
+        String sql = "SELECT " +
+                     "  f.numero_factura, " +
+                     "  f.fecha_emision, " +
+                     "  f.subtotal, " +
+                     "  f.descuento, " +
+                     "  f.valor_iva, " +
+                     "  f.total, " +
+                     "  f.metodo_pago, " +
+                     "  f.estado_pago " +
+                     "FROM ventas v " +
+                     "INNER JOIN factura f ON v.id = f.venta_id " +
+                     "WHERE v.numero_documento_cliente = ? " +
+                     "ORDER BY f.fecha_emision DESC";
+        
+        ps = con.prepareStatement(sql);
+        ps.setString(1, numeroDocumento);
+        rs = ps.executeQuery();
+        
+        // Contar filas
+        int rowCount = 0;
+        while (rs.next()) {
+            rowCount++;
+        }
+        
+        if (rowCount == 0) {
+            JOptionPane.showMessageDialog(this,
+                "Este cliente no tiene compras registradas",
+                "Sin Historial",
+                JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        
+        // Reiniciar ResultSet
+        rs.beforeFirst();
+        
+        // Crear matriz para las filas
+        Object[][] rows = new Object[rowCount][8];
+        NumberFormat formatoMoneda = NumberFormat.getCurrencyInstance(new Locale("es", "CO"));
+        SimpleDateFormat formatoFecha = new SimpleDateFormat("dd/MM/yyyy");
+        
+        int i = 0;
+        while (rs.next()) {
+            rows[i][0] = rs.getString("numero_factura");
+            rows[i][1] = formatoFecha.format(rs.getTimestamp("fecha_emision"));
+            rows[i][2] = formatoMoneda.format(rs.getDouble("subtotal"));
+            rows[i][3] = formatoMoneda.format(rs.getDouble("descuento"));
+            rows[i][4] = formatoMoneda.format(rs.getDouble("valor_iva"));
+            rows[i][5] = formatoMoneda.format(rs.getDouble("total"));
+            rows[i][6] = rs.getString("metodo_pago");
+            rows[i][7] = rs.getString("estado_pago");
+            i++;
+        }
+        
+        // Crear el modelo de la tabla
+        DefaultTableModel model = new DefaultTableModel(rows, colNames);
+        
+        // Asignar el modelo a la JTable
+        jTable_Clientes.setModel(model);
+        jTable_Clientes.setRowHeight(30);
+        
+        // Obtener resumen
+        Object[] resumen = obtenerResumenCliente(idCliente);
+        
+        // Mostrar resumen en el título
+        this.setTitle(String.format("Historial - %s | Compras: %d | Total: %s",
+            nombreCliente,
+            resumen[0],
+            formatoMoneda.format((Double)resumen[1])
+        ));
+        
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(null,
+            "Error al cargar historial:\n" + ex.getMessage(),
+            "Error",
+            JOptionPane.ERROR_MESSAGE);
+        Logger.getLogger(ConsultaClientes.class.getName())
+            .log(Level.SEVERE, null, ex);
+    } finally {
+        try {
+            if (rs != null) rs.close();
+            if (ps != null) ps.close();
+            if (con != null) con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+    //Obtiene estadísticas de un cliente (total compras, total gastado, última compra)
+    public Object[] obtenerResumenCliente(int idCliente) {
+         Connection con = null;
+    PreparedStatement ps = null;
+    ResultSet rs = null;
+    Object[] resumen = {0, 0.0, "Sin compras"};
+    
+    try {
+        con = modelo.ConexionDB.getConnection();
+        
+        // Primero obtener el numero_documento
+        String sqlDoc = "SELECT numero_documento FROM clientes WHERE id = ?";
+        PreparedStatement psDoc = con.prepareStatement(sqlDoc);
+        psDoc.setInt(1, idCliente);
+        ResultSet rsDoc = psDoc.executeQuery();
+        
+        String numeroDocumento = "";
+        if (rsDoc.next()) {
+            numeroDocumento = rsDoc.getString("numero_documento");
+        }
+        rsDoc.close();
+        psDoc.close();
+        
+        if (numeroDocumento.isEmpty()) {
+            return resumen;
+        }
+        
+        // Ahora consultar el resumen
+        String sql = "SELECT " +
+                     "  COUNT(f.id) AS total_compras, " +
+                     "  COALESCE(SUM(f.total), 0) AS total_gastado, " +
+                     "  MAX(DATE_FORMAT(f.fecha_emision, '%d/%m/%Y')) AS ultima_compra " +
+                     "FROM factura f " +
+                     "INNER JOIN ventas v ON f.venta_id = v.id " +  // ← Cambiado aquí
+                     "WHERE v.numero_documento_cliente = ? " +
+                     "AND f.estado != 'nota_credito'";  // ← Cambiado de 'anulada'
+        
+        ps = con.prepareStatement(sql);
+        ps.setString(1, numeroDocumento);
+        rs = ps.executeQuery();
+        
+        if (rs.next()) {
+            resumen[0] = rs.getInt("total_compras");
+            resumen[1] = rs.getDouble("total_gastado");
+            String ultima = rs.getString("ultima_compra");
+            resumen[2] = (ultima != null) ? ultima : "Sin compras";
+        }
+        
+    } catch (SQLException e) {
+        System.err.println("Error al obtener resumen: " + e.getMessage());
+        e.printStackTrace();  // ← Agregado para ver más detalles
+    } finally {
+        try {
+            if (rs != null) rs.close();
+            if (ps != null) ps.close();
+            if (con != null) con.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    return resumen;
+}
 
     private void cargarTablaClientes() {
         clienListCache = getClienList();  // Recargar desde BD
@@ -179,17 +370,17 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
 
     private boolean validarCampos() {
         if (this.jTextField_nombre_cliente.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(null, "⚠️ El nombre es obligatorio");
+            JOptionPane.showMessageDialog(null, "El nombre es obligatorio");
             return false;
         }
 
         if (this.jTextField1_numero_documento.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(null, "⚠️ El número de documento es obligatorio");
+            JOptionPane.showMessageDialog(null, "El número de documento es obligatorio");
             return false;
         }
 
         if (this.jTextField_telefono.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(null, "⚠️ El teléfono es obligatorio");
+            JOptionPane.showMessageDialog(null, "El teléfono es obligatorio");
             return false;
         }
 
@@ -239,6 +430,9 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         jLabel13 = new javax.swing.JLabel();
         jTextField4_ciudad = new javax.swing.JTextField();
         jTextField3_direccion = new javax.swing.JTextField();
+        jButton_historial = new javax.swing.JButton();
+        jTextField_descuento = new javax.swing.JTextField();
+        jLabel3 = new javax.swing.JLabel();
 
         jTextField1.setText("jTextField1");
 
@@ -406,6 +600,19 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         jLabel13.setFont(new java.awt.Font("Lucida Sans", 1, 14)); // NOI18N
         jLabel13.setText("Ciudad:");
 
+        jButton_historial.setBackground(new java.awt.Color(255, 255, 255));
+        jButton_historial.setFont(new java.awt.Font("Lucida Sans", 1, 14)); // NOI18N
+        jButton_historial.setIcon(new javax.swing.ImageIcon(getClass().getResource("/imagenes/historial.png"))); // NOI18N
+        jButton_historial.setText("Historial");
+        jButton_historial.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton_historialActionPerformed(evt);
+            }
+        });
+
+        jLabel3.setFont(new java.awt.Font("Lucida Sans", 1, 14)); // NOI18N
+        jLabel3.setText("Descuento:");
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -425,8 +632,9 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
                         .addComponent(jLabel6, javax.swing.GroupLayout.Alignment.TRAILING)
                         .addComponent(jLabel9, javax.swing.GroupLayout.Alignment.TRAILING)
                         .addComponent(jLabel12, javax.swing.GroupLayout.Alignment.TRAILING))
+                    .addComponent(jLabel13)
                     .addComponent(jLabel11)
-                    .addComponent(jLabel13))
+                    .addComponent(jLabel3))
                 .addGap(65, 65, 65)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jTextField_telefono, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -442,8 +650,10 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jRadioButton_empresa))
                     .addComponent(jTextField2_correo, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField4_ciudad, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jTextField3_direccion, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jTextField3_direccion, javax.swing.GroupLayout.PREFERRED_SIZE, 201, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                        .addComponent(jTextField_descuento, javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(jTextField4_ciudad, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 201, Short.MAX_VALUE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(jScrollPane1)
                 .addContainerGap())
@@ -464,17 +674,20 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jButton_siguiente)
                         .addGap(27, 27, 27)
-                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jButton_refrescar))
-                .addGap(37, 37, 37)
-                .addComponent(jButton5)
+                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(37, 37, 37)
+                        .addComponent(jButton5))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(jButton_refrescar)
+                        .addGap(38, 38, 38)
+                        .addComponent(jButton_historial, javax.swing.GroupLayout.PREFERRED_SIZE, 136, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(31, 31, 31))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGap(15, 15, 15)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -512,15 +725,24 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(jLabel11)
                             .addComponent(jTextField3_direccion, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addGap(18, 18, 18)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGap(18, 18, 18)
+                                .addComponent(jLabel13)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(jTextField4_ciudad, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)))
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel13)
-                            .addComponent(jTextField4_ciudad, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                            .addComponent(jTextField_descuento, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jLabel3)))
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 443, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton_imprimir, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton_refrescar, javax.swing.GroupLayout.Alignment.TRAILING))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jButton_imprimir, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jButton_refrescar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jButton_historial, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -581,7 +803,8 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         jTextField2_correo.setText(jTable_Clientes.getValueAt(rowIndex, 6).toString());
         jTextField3_direccion.setText(jTable_Clientes.getValueAt(rowIndex, 7).toString());
         jTextField4_ciudad.setText(jTable_Clientes.getValueAt(rowIndex, 8).toString());
-
+        String descuento = jTable_Clientes.getValueAt(rowIndex, 9).toString().replace("%", "");
+        jTextField_descuento.setText(descuento);
     }//GEN-LAST:event_jTable_ClientesMouseClicked
 
     private void jButton_eliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_eliminarActionPerformed
@@ -590,7 +813,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
             int filaSeleccionada = this.jTable_Clientes.getSelectedRow();
 
             if (filaSeleccionada == -1) {
-                JOptionPane.showMessageDialog(null, "⚠️ Debe seleccionar un cliente de la tabla");
+                JOptionPane.showMessageDialog(null, "Debe seleccionar un cliente de la tabla");
                 return;
             }
 
@@ -692,6 +915,17 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         clientes.setGenero(genero);
         clientes.setCorreoElectronico(jTextField2_correo.getText());
 
+        try {
+            double descuento = Double.parseDouble(jTextField_descuento.getText().trim());
+            if (descuento > 20) {
+                JOptionPane.showMessageDialog(this, "El descuento máximo es 20%");
+                jTextField_descuento.setText("20");
+                descuento = 20;
+            }
+            clientes.setDescuentoFijo(descuento);
+        } catch (NumberFormatException e) {
+            clientes.setDescuentoFijo(0);
+        }
         // Llamar al método para insertar el usuario
         modelo.Clientes.insertarClientes(clientes);
 
@@ -730,6 +964,18 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
             genero = "Empresa";
         }
 
+        double descuento = 0;
+        try {
+            descuento = Double.parseDouble(jTextField_descuento.getText().trim());
+            if (descuento > 20) {
+                JOptionPane.showMessageDialog(this, "El descuento máximo es 20%");
+                jTextField_descuento.setText("20");
+                descuento = 20;
+            }
+        } catch (NumberFormatException e) {
+            descuento = 0;
+        }
+
         if (verifyFields()) {
             try {
                 int selectedRow = jTable_Clientes.getSelectedRow();
@@ -745,8 +991,8 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
 
                 Clientes cliente = new Clientes(
                         idCliente, nombreCompleto, tipoId, numeroDocumento,
-                        genero, telefono, correoElectronico, direccion, ciudad
-                );
+                        genero, telefono, correoElectronico, direccion, ciudad,
+                        descuento);
 
                 //Llamada correcta (método estático)
                 Clientes.actualizarClientes(cliente);
@@ -764,7 +1010,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
                     System.err.println("Error al registrar: " + e.getMessage());
                 }
                 //Refrescar tabla
-                populateJtable("");
+                cargarTablaClientes();
 
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(null,
@@ -788,7 +1034,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
     private void jButton_refrescarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_refrescarActionPerformed
         // TODO add your handling code here:
         limpiarCampos();
-        populateJtable("");
+        cargarTablaClientes();
     }//GEN-LAST:event_jButton_refrescarActionPerformed
 
     private void jButton_imprimirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_imprimirActionPerformed
@@ -829,6 +1075,41 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_jTextField2_correoActionPerformed
 
+    private void jButton_historialActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton_historialActionPerformed
+        // TODO add your handling code here:
+        if (jButton_historial.getText().equals("Historial")) {
+        // Verificar que hay un cliente seleccionado
+        int filaSeleccionada = jTable_Clientes.getSelectedRow();
+        
+        if (filaSeleccionada == -1) {
+            JOptionPane.showMessageDialog(this, 
+                "Por favor seleccione un cliente de la tabla", 
+                "Aviso", 
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // Obtener datos del cliente
+        idClienteSeleccionado = Integer.parseInt(jTable_Clientes.getValueAt(filaSeleccionada, 0).toString());
+        nombreClienteSeleccionado = jTable_Clientes.getValueAt(filaSeleccionada, 1).toString();
+        
+        // Cargar historial
+        populateJtableHistorial(idClienteSeleccionado, nombreClienteSeleccionado);
+        
+        // Cambiar botón a "Volver"
+        jButton_historial.setText("Volver a Clientes");
+        jButton_historial.setIcon(new ImageIcon(this.getClass().getResource("/imagenes/atras.png")));
+        
+    } else {
+        // Volver a la vista de clientes
+        cargarTablaClientes();
+        this.setTitle("Consultas");
+        
+        jButton_historial.setText("Historial");
+        jButton_historial.setIcon(new ImageIcon(this.getClass().getResource("/imagenes/historial.png")));
+    }
+    }//GEN-LAST:event_jButton_historialActionPerformed
+
     public ArrayList<Clientes> getClienList() {
         ArrayList<Clientes> clientList = new ArrayList<>();
         String query = "SELECT * FROM clientes";
@@ -847,7 +1128,8 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
                         rs.getString("telefono"),
                         rs.getString("correo_electronico"),
                         rs.getString("direccion"),
-                        rs.getString("ciudad")
+                        rs.getString("ciudad"),
+                        rs.getDouble("descuento_fijo")
                 );
                 clientList.add(cliente);
             }
@@ -908,6 +1190,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton_eliminar;
     private javax.swing.JButton jButton_first;
+    private javax.swing.JButton jButton_historial;
     private javax.swing.JButton jButton_imprimir;
     private javax.swing.JButton jButton_insertar;
     private javax.swing.JButton jButton_refrescar;
@@ -919,6 +1202,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
     private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel13;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
     private javax.swing.JLabel jLabel7;
@@ -935,6 +1219,7 @@ public class ConsultaClientes extends javax.swing.JInternalFrame {
     private javax.swing.JTextField jTextField3_direccion;
     private javax.swing.JTextField jTextField4_ciudad;
     private javax.swing.JTextField jTextField_ID;
+    private javax.swing.JTextField jTextField_descuento;
     private javax.swing.JTextField jTextField_nombre_cliente;
     private javax.swing.JTextField jTextField_telefono;
     // End of variables declaration//GEN-END:variables

@@ -4,7 +4,6 @@
  */
 package modelo;
 
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,8 +12,6 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
-import javax.swing.table.DefaultTableModel;
-import modelo.ConexionDB;
 
 /**
  *
@@ -34,7 +31,8 @@ public class Proveedores {
 
     }
 
-    public Proveedores(Integer id, String nombreProveedor, String tipoDocumento, String numeroDocumento, String genero, String telefono, String correoElectronico) {
+    public Proveedores(Integer id, String nombreProveedor, String tipoDocumento, String numeroDocumento, 
+            String genero, String telefono, String correoElectronico) {
 
         this.id = id;
         this.nombreProveedor = nombreProveedor;

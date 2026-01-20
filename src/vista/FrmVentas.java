@@ -44,7 +44,6 @@ public class FrmVentas extends javax.swing.JInternalFrame {
                     "Ventas",
                     "Accedió al módulo de Ventas"
             );
-            System.out.println("Acceso al módulo de Ventas registrado");
         } catch (Exception e) {
             System.err.println("Error al registrar acceso: " + e.getMessage());
         }
@@ -60,6 +59,14 @@ public class FrmVentas extends javax.swing.JInternalFrame {
         jTextField1_cantidad_stock.setPreferredSize(new Dimension(60, 25));  // Ancho: 100, Alto: 25
         jTextField1_cantidad_stock.setEnabled(false);  // Para que no puedan escribir
         jTextField_nombre_producto.setEnabled(false);
+        jTextField_descuento.setEnabled(false);
+        jTextField_descuento.setText("0.00 %");
+        jTextField_descuento.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                actualizarTotales();
+            }
+        });
 
         inicializarComboMetodoPago();  //Inicializa el ComboBox
         controladorVentas = new RegistrarVentas(this);
@@ -92,12 +99,13 @@ public class FrmVentas extends javax.swing.JInternalFrame {
         jTextField_iva.setText("");
         jSpinner_cantidad.setValue(0);
         jTextField_total.setText("");
+        jTextField_descuento.setText("0.00 %");
     }
 
     private void actualizarTotales() {
         double subtotal = 0.0;
 
-        //Sumar todos los subtotales de la tabla
+        // Sumar todos los subtotales de la tabla
         for (int i = 0; i < modeloTabla.getRowCount(); i++) {
             Object valor = modeloTabla.getValueAt(i, 6); // Columna "Subtotal"
             if (valor != null) {
@@ -109,14 +117,36 @@ public class FrmVentas extends javax.swing.JInternalFrame {
             }
         }
 
-        //Calcular IVA (19%)
-        double iva = subtotal * 0.19;
+        // Obtener porcentaje de descuento del cliente
+        double porcentajeDescuento = 0.0;
+        try {
+            String descuentoTxt = jTextField_descuento.getText().trim()
+                    .replace("%", "").replace("$", "").replace(",", "").trim();
+            if (!descuentoTxt.isEmpty()) {
+                porcentajeDescuento = Double.parseDouble(descuentoTxt);
+            }
+        } catch (NumberFormatException e) {
+            porcentajeDescuento = 0.0;
+        }
 
-        //Calcular total general
-        double total = subtotal + iva;
+        // Calcular el valor del descuento (porcentaje del subtotal)
+        double valorDescuento = subtotal * (porcentajeDescuento / 100);
 
-        //Mostrar en etiquetas con formato de moneda
+        // Subtotal con descuento aplicado
+        double subtotalConDescuento = subtotal - valorDescuento;
+        if (subtotalConDescuento < 0) {
+            subtotalConDescuento = 0;
+        }
+
+        // Calcular IVA (19%) sobre el subtotal con descuento
+        double iva = subtotalConDescuento * 0.19;
+
+        // Calcular total general
+        double total = subtotalConDescuento + iva;
+
+        // Mostrar en campos con formato
         jTextField_subtotal.setText(String.format("$ %.2f", subtotal));
+        jTextField_descuento.setText(String.format("%.2f %%", porcentajeDescuento));
         jTextField_iva.setText(String.format("$ %.2f", iva));
         jTextField_total.setText(String.format("$ %.2f", total));
     }
@@ -124,22 +154,42 @@ public class FrmVentas extends javax.swing.JInternalFrame {
     private void recalcularTotales() {
         double subtotal = 0.0;
 
-        // Recorre todas las filas y suma los subtotales
         for (int i = 0; i < jTable_ventas.getRowCount(); i++) {
-            Object valor = jTable_ventas.getValueAt(i, 6); // Columna "Subtotal"
+            Object valor = jTable_ventas.getValueAt(i, 6);
             if (valor != null && !valor.toString().isEmpty()) {
-                subtotal += Double.parseDouble(valor.toString());
+                try {
+                    subtotal += Double.parseDouble(valor.toString());
+                } catch (NumberFormatException e) {
+                    System.err.println("Error al convertir: " + valor);
+                }
             }
         }
 
-        // Calcular IVA (19%) y total
-        double iva = subtotal * 0.19;
-        double total = subtotal + iva;
+        // Obtener porcentaje de descuento
+        double porcentajeDescuento = 0.0;
+        try {
+            String descuentoTxt = jTextField_descuento.getText().trim()
+                    .replace("%", "").replace("$", "").replace(",", "").trim();
+            if (!descuentoTxt.isEmpty()) {
+                porcentajeDescuento = Double.parseDouble(descuentoTxt);
+            }
+        } catch (NumberFormatException e) {
+            porcentajeDescuento = 0.0;
+        }
 
-        // Mostrar los valores en los labels o textfields
-        jTextField_subtotal.setText(String.format("$%.2f", subtotal));
-        jTextField_iva.setText(String.format("$%.2f", iva)); // Aquí usas este campo como IVA
-        jTextField_total.setText(String.format("$%.2f", total));
+        // Calcular descuento y aplicar
+        double valorDescuento = subtotal * (porcentajeDescuento / 100);
+        double subtotalConDescuento = subtotal - valorDescuento;
+        if (subtotalConDescuento < 0) {
+            subtotalConDescuento = 0;
+        }
+
+        double iva = subtotalConDescuento * 0.19;
+        double total = subtotalConDescuento + iva;
+
+        jTextField_subtotal.setText(String.format("$ %.2f", subtotal));
+        jTextField_iva.setText(String.format("$ %.2f", iva));
+        jTextField_total.setText(String.format("$ %.2f", total));
     }
 
     //BUSQUEDA DE CLIENTES
@@ -167,16 +217,26 @@ public class FrmVentas extends javax.swing.JInternalFrame {
                 return;
             }
 
-            String sql = "SELECT nombre_completo FROM clientes WHERE numero_documento = ?";
+            // Consulta modificada para obtener también el descuento
+            String sql = "SELECT nombre_completo, descuento_fijo FROM clientes WHERE numero_documento = ?";
             ps = conn.prepareStatement(sql);
             ps.setString(1, numeroDocumento);
             rs = ps.executeQuery();
 
             if (rs.next()) {
-                jTextField_nombre_completo_cliente
-                        .setText(rs.getString("nombre_completo"));
+                // Mostrar nombre del cliente
+                jTextField_nombre_completo_cliente.setText(rs.getString("nombre_completo"));
+
+                // Obtener y mostrar el descuento
+                double descuento = rs.getDouble("descuento_fijo");
+                jTextField_descuento.setText(String.format("%.2f %%", descuento));
+
+                // Recalcular totales con el descuento
+                actualizarTotales();
+
             } else {
                 jTextField_nombre_completo_cliente.setText("");
+                jTextField_descuento.setText("$ 0.00");
                 JOptionPane.showMessageDialog(
                         this,
                         "Cliente no encontrado.\nDocumento: " + numeroDocumento,
@@ -214,6 +274,34 @@ public class FrmVentas extends javax.swing.JInternalFrame {
                 System.err.println("Error al cerrar recursos: " + e.getMessage());
             }
         }
+    }
+
+    // Obtiene el VALOR del descuento calculado (no el porcentaje)
+    public double getValorDescuento() {
+        double subtotal = 0.0;
+        for (int i = 0; i < jTable_ventas.getRowCount(); i++) {
+            Object valor = jTable_ventas.getValueAt(i, 6);
+            if (valor != null && !valor.toString().isEmpty()) {
+                try {
+                    subtotal += Double.parseDouble(valor.toString());
+                } catch (NumberFormatException e) {
+                }
+            }
+        }
+
+        double porcentaje = 0.0;
+        try {
+            String descuentoTxt = jTextField_descuento.getText();
+            // Quitar TODO excepto números y punto
+            descuentoTxt = descuentoTxt.replaceAll("[^0-9.]", "");
+            if (!descuentoTxt.isEmpty()) {
+                porcentaje = Double.parseDouble(descuentoTxt);
+            }
+        } catch (NumberFormatException e) {
+            porcentaje = 0.0;
+        }
+
+        return subtotal * (porcentaje / 100);
     }
 
     /**
@@ -266,6 +354,8 @@ public class FrmVentas extends javax.swing.JInternalFrame {
         jLabel_total = new javax.swing.JLabel();
         jTextField_subtotal = new javax.swing.JTextField();
         jTextField_total = new javax.swing.JTextField();
+        jLabel7 = new javax.swing.JLabel();
+        jTextField_descuento = new javax.swing.JTextField();
         jLabel_cantidad = new javax.swing.JLabel();
         jSpinner_cantidad = new javax.swing.JSpinner();
         jPanel1 = new javax.swing.JPanel();
@@ -462,7 +552,7 @@ public class FrmVentas extends javax.swing.JInternalFrame {
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel_botonesLayout.createSequentialGroup()
                 .addGap(84, 84, 84)
                 .addComponent(jButton_procesar_venta, javax.swing.GroupLayout.PREFERRED_SIZE, 185, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 191, Short.MAX_VALUE)
                 .addComponent(jButton_nueva_venta, javax.swing.GroupLayout.PREFERRED_SIZE, 166, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(132, 132, 132)
                 .addComponent(jButton_cancelar, javax.swing.GroupLayout.PREFERRED_SIZE, 172, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -502,40 +592,45 @@ public class FrmVentas extends javax.swing.JInternalFrame {
         jTextField_total.setForeground(new java.awt.Color(0, 204, 0));
         jTextField_total.setText("$");
 
+        jLabel7.setFont(new java.awt.Font("Lucida Sans", 1, 14)); // NOI18N
+        jLabel7.setText("Descuento:");
+
         javax.swing.GroupLayout jPanel_totalesLayout = new javax.swing.GroupLayout(jPanel_totales);
         jPanel_totales.setLayout(jPanel_totalesLayout);
         jPanel_totalesLayout.setHorizontalGroup(
             jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel_totalesLayout.createSequentialGroup()
+                .addGap(60, 60, 60)
                 .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel_totalesLayout.createSequentialGroup()
-                        .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel_totalesLayout.createSequentialGroup()
-                                .addGap(62, 62, 62)
-                                .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(jLabel5)
-                                    .addComponent(jLabel_subtotal)))
-                            .addGroup(jPanel_totalesLayout.createSequentialGroup()
-                                .addGap(66, 66, 66)
-                                .addComponent(jLabel6)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel_total)))
-                        .addGap(77, 77, 77)
                         .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jTextField_iva, javax.swing.GroupLayout.PREFERRED_SIZE, 132, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jTextField_subtotal, javax.swing.GroupLayout.PREFERRED_SIZE, 132, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jTextField_total, javax.swing.GroupLayout.PREFERRED_SIZE, 132, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(jPanel_totalesLayout.createSequentialGroup()
-                        .addGap(62, 62, 62)
-                        .addComponent(jLabel4)))
-                .addContainerGap(128, Short.MAX_VALUE))
+                            .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addGroup(jPanel_totalesLayout.createSequentialGroup()
+                                    .addGap(104, 104, 104)
+                                    .addComponent(jLabel_total))
+                                .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                    .addComponent(jLabel_subtotal)
+                                    .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(jLabel6)
+                                        .addComponent(jLabel5))))
+                            .addGroup(jPanel_totalesLayout.createSequentialGroup()
+                                .addComponent(jLabel7)
+                                .addGap(41, 41, 41)))
+                        .addGap(77, 77, 77)
+                        .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(jTextField_iva, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 132, Short.MAX_VALUE)
+                            .addComponent(jTextField_subtotal, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 132, Short.MAX_VALUE)
+                            .addComponent(jTextField_total, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, 132, Short.MAX_VALUE)
+                            .addComponent(jTextField_descuento, javax.swing.GroupLayout.Alignment.LEADING)))
+                    .addComponent(jLabel4))
+                .addContainerGap(130, Short.MAX_VALUE))
         );
         jPanel_totalesLayout.setVerticalGroup(
             jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel_totalesLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(jLabel4)
-                .addGap(22, 22, 22)
+                .addGap(10, 10, 10)
                 .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(jPanel_totalesLayout.createSequentialGroup()
                         .addComponent(jTextField_subtotal, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -549,13 +644,18 @@ public class FrmVentas extends javax.swing.JInternalFrame {
                 .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel_totalesLayout.createSequentialGroup()
                         .addGap(22, 22, 22)
-                        .addComponent(jLabel_total))
+                        .addComponent(jLabel_total)
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(jPanel_totalesLayout.createSequentialGroup()
-                        .addGap(18, 18, 18)
-                        .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addGap(17, 17, 17)
+                        .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel7)
+                            .addComponent(jTextField_descuento, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGroup(jPanel_totalesLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jTextField_total, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel6))))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addComponent(jLabel6))
+                        .addGap(14, 14, 14))))
         );
 
         jLabel_cantidad.setFont(new java.awt.Font("Lucida Sans", 1, 14)); // NOI18N
@@ -635,7 +735,7 @@ public class FrmVentas extends javax.swing.JInternalFrame {
                 .addGroup(jPanel_busquedaLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jButton_agregar, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jButton_eliminar_producto, javax.swing.GroupLayout.DEFAULT_SIZE, 140, Short.MAX_VALUE))
-                .addGap(42, 42, 42))
+                .addGap(40, 40, 40))
         );
         jPanel_busquedaLayout.setVerticalGroup(
             jPanel_busquedaLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -682,7 +782,7 @@ public class FrmVentas extends javax.swing.JInternalFrame {
         jPanel1_ventaLayout.setHorizontalGroup(
             jPanel1_ventaLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1_ventaLayout.createSequentialGroup()
-                .addContainerGap(24, Short.MAX_VALUE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(jPanel1_ventaLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1_ventaLayout.createSequentialGroup()
                         .addComponent(jPanel_busqueda, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
@@ -748,7 +848,7 @@ public class FrmVentas extends javax.swing.JInternalFrame {
         //Verificar que se encontró el producto
         if (lista.isEmpty()) {
 
-            jLabel_estado_busqueda.setText("Producto no encontrado ✖");
+            jLabel_estado_busqueda.setText("Producto no encontrado");
             jLabel_estado_busqueda.setForeground(Color.RED);
             JOptionPane.showMessageDialog(this,
                     "Producto no encontrado.\n\n"
@@ -779,7 +879,7 @@ public class FrmVentas extends javax.swing.JInternalFrame {
         jSpinner_cantidad.setValue(1);
 
         //Cambiar el label de estado 
-        jLabel_estado_busqueda.setText("Producto encontrado ✔");
+        jLabel_estado_busqueda.setText("Producto encontrado");
         jLabel_estado_busqueda.setForeground(Color.GREEN);
 
         // Dar foco al spinner para seleccionar cantidad
@@ -857,7 +957,6 @@ public class FrmVentas extends javax.swing.JInternalFrame {
                     "Ventas",
                     "Intento procesar venta"
             );
-            System.out.println("Se realizo una venta");
         } catch (Exception e) {
             System.err.println("Error al registrar acceso: " + e.getMessage());
         }
@@ -904,9 +1003,7 @@ public class FrmVentas extends javax.swing.JInternalFrame {
         ArrayList<Producto> lista = producto.productoList(valorBuscar);
 
         if (lista.isEmpty()) {
-            System.out.println("Error: Producto no encontrado en BD");
-
-            jLabel_estado_busqueda.setText("Error obteniendo producto ✖");
+            jLabel_estado_busqueda.setText("Error obteniendo producto");
             jLabel_estado_busqueda.setForeground(Color.RED);
 
             JOptionPane.showMessageDialog(this,
@@ -940,8 +1037,6 @@ public class FrmVentas extends javax.swing.JInternalFrame {
 
         // VALIDACIÓN 4: Verificar si el producto ya está en la tabla
         DefaultTableModel modelo = (DefaultTableModel) jTable_ventas.getModel();
-        System.out.println("Verificando si producto ya existe en tabla...");
-
         for (int i = 0; i < modelo.getRowCount(); i++) {
             String codigoEnTabla = modelo.getValueAt(i, 0).toString();
 
@@ -952,8 +1047,6 @@ public class FrmVentas extends javax.swing.JInternalFrame {
                 int nuevaCantidad = cantidadActual + cantidad;
 
                 if (nuevaCantidad > stockDisponible) {
-                    System.out.println("Error: Nueva cantidad excede stock");
-
                     JOptionPane.showMessageDialog(this,
                             "Stock insuficiente\n\n"
                             + "Ya tienes " + cantidadActual + " en el carrito\n"
@@ -990,7 +1083,7 @@ public class FrmVentas extends javax.swing.JInternalFrame {
                     limpiarCampos();
 
                     JOptionPane.showMessageDialog(this,
-                            "✅ Cantidad actualizada correctamente",
+                            "Cantidad actualizada correctamente",
                             "Éxito",
                             JOptionPane.INFORMATION_MESSAGE);
                 } else {
@@ -1078,6 +1171,7 @@ public class FrmVentas extends javax.swing.JInternalFrame {
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
     private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
     private javax.swing.JLabel jLabel8;
     private javax.swing.JLabel jLabel9;
     private javax.swing.JLabel jLabel_cantidad;
@@ -1109,6 +1203,7 @@ public class FrmVentas extends javax.swing.JInternalFrame {
     private javax.swing.JTextField jTextField1_cantidad_stock;
     private javax.swing.JTextField jTextField_buscar_codigo_producto;
     private javax.swing.JTextField jTextField_cliente;
+    private javax.swing.JTextField jTextField_descuento;
     private javax.swing.JTextField jTextField_iva;
     private javax.swing.JTextField jTextField_nombre_completo_cliente;
     private javax.swing.JTextField jTextField_nombre_producto;
@@ -1190,9 +1285,11 @@ public class FrmVentas extends javax.swing.JInternalFrame {
 
     // Obtiene el descuento como texto (si existe un campo separado)
     public String getDescuentoTexto() {
-        // Si tienes un campo separado para descuento, úsalo aquí
-        // Si no, devuelve 0
-        return "0";
+        if (jTextField_descuento == null) {
+            return "0";
+        }
+        String txt = jTextField_descuento.getText().trim();
+        return txt.isEmpty() ? "0" : txt;
     }
 
     // Obtiene el total como texto
@@ -1208,13 +1305,11 @@ public class FrmVentas extends javax.swing.JInternalFrame {
     public String getMetodoPagoSeleccionado() {
         // Validar que el ComboBox no sea null
         if (jComboBoxMetodoPago == null) {
-            System.out.println("jComboBoxMetodoPago es null, usando Efectivo");
             return "Efectivo";
         }
 
         // Validar que tenga algo seleccionado
         if (jComboBoxMetodoPago.getSelectedItem() == null) {
-            System.out.println("No hay método de pago seleccionado, usando Efectivo");
             return "Efectivo";
         }
 
@@ -1223,7 +1318,6 @@ public class FrmVentas extends javax.swing.JInternalFrame {
         // Validar que no esté vacío o sea "Seleccionar"
         if (metodoPago == null || metodoPago.isEmpty()
                 || metodoPago.equals("Seleccionar") || metodoPago.equals("-- Seleccionar --")) {
-            System.out.println("Método de pago vacío o 'Seleccionar', usando Efectivo");
             return "Efectivo";
         }
 
@@ -1258,6 +1352,10 @@ public class FrmVentas extends javax.swing.JInternalFrame {
 
         if (jTextField_total != null) {
             jTextField_total.setText("0");
+        }
+
+        if (jTextField_descuento != null) {
+            jTextField_descuento.setText("0.00 %");
         }
 
         if (jTable_ventas != null) {
